@@ -1,4 +1,4 @@
-import { type CSSProperties, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import {
   ALLOCATION_LABELS,
@@ -24,7 +24,6 @@ import {
 } from './lib/data-service'
 import {
   allocationTotal,
-  buildAllowanceYear,
   buildMonthStory,
   calculateTotals,
   centsToInput,
@@ -660,7 +659,7 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
                 </div>
               </section>
 
-              <AllowanceYearCard transactions={moneyMap.transactions} />
+              <AllowancePlanCard />
             </div>
 
             <section className="panel panel-pad entry-panel" id="entry-panel" aria-labelledby="form-title">
@@ -766,36 +765,31 @@ function TransactionList({ transactions, filter, edit, remove, disabled }: { tra
   )
 }
 
-const ALLOWANCE_MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
-const ALLOWANCE_MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
-function AllowanceYearCard({ transactions }: { transactions: Transaction[] }) {
-  const year = new Date().getFullYear()
-  const allowance = useMemo(() => buildAllowanceYear(transactions, year), [transactions, year])
-  const annualTargetCents = MONTHLY_ALLOWANCE_CENTS * 12
-  const remainingCents = Math.max(0, annualTargetCents - allowance.totalCents)
+function AllowancePlanCard() {
+  const plans = [
+    { years: 1, months: 12, totalCents: MONTHLY_ALLOWANCE_CENTS * 12, coins: 3 },
+    { years: 2, months: 24, totalCents: MONTHLY_ALLOWANCE_CENTS * 24, coins: 6 },
+  ]
 
   return (
     <section className="panel allowance-card" aria-labelledby="allowance-heading">
       <div className="allowance-head">
-        <div><p className="allowance-kicker">€15 each month</p><h2 id="allowance-heading">Allowance coin pile</h2></div>
-        <span>{year}</span>
+        <div><p className="allowance-kicker">€15 each month</p><h2 id="allowance-heading">Allowance plan</h2></div>
+        <span aria-hidden="true">🪙</span>
       </div>
-      <p className="allowance-total"><strong>{formatMoney(allowance.totalCents)}</strong><span> of {formatMoney(annualTargetCents)}</span></p>
-      <div className="allowance-piles" aria-label={`${year} allowance by month`}>
-        {allowance.months.map((amountCents, month) => (
-          <div className="allowance-month" key={ALLOWANCE_MONTH_NAMES[month]} role="img" aria-label={`${ALLOWANCE_MONTH_NAMES[month]}: ${formatMoney(amountCents)}`}>
-            <div className="coin-stack" aria-hidden="true">
-              {[0, 1, 2].map((coin) => {
-                const fill = Math.max(0, Math.min(100, (amountCents - coin * 500) / 500 * 100))
-                return <span className="allowance-coin" key={coin} style={{ '--coin-fill': `${fill}%` } as CSSProperties} />
-              })}
+      <div className="allowance-plans">
+        {plans.map((plan) => (
+          <article className="allowance-plan" key={plan.years}>
+            <span className="allowance-time">{plan.years} year{plan.years > 1 ? 's' : ''}</span>
+            <div className="plan-coin-pile" aria-hidden="true">
+              {Array.from({ length: plan.coins }, (_, coin) => <span className="plan-coin" key={coin} />)}
             </div>
-            <span aria-hidden="true">{ALLOWANCE_MONTH_LABELS[month]}</span>
-          </div>
+            <strong>{formatMoney(plan.totalCents)}</strong>
+            <span className="allowance-months">{plan.months} months</span>
+          </article>
         ))}
       </div>
-      <p className="allowance-note">{remainingCents > 0 ? `${formatMoney(remainingCents)} left to collect this year` : 'Full year collected — amazing! 🌟'}</p>
+      <p className="allowance-note">Planning only — not included in Hanzo’s current money.</p>
     </section>
   )
 }

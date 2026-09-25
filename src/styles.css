@@ -200,13 +200,14 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .allowance-head h2 { font-size: 1rem; letter-spacing: -.02em; }
 .allowance-head > span { padding: 4px 7px; border-radius: 999px; color: #6a5319; background: rgba(243, 201, 94, .38); font-size: .75rem; font-weight: 900; }
 .allowance-kicker { color: #776229; font-size: .75rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-.allowance-total { margin: 7px 0 0; color: var(--ink-soft); font-size: .78rem; font-weight: 750; }
-.allowance-total strong { color: var(--ink); font-size: 1.4rem; line-height: 1; letter-spacing: -.035em; }
-.allowance-piles { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; align-items: end; margin: 12px 0 8px; }
-.allowance-month { display: grid; justify-items: center; gap: 3px; min-width: 0; color: #6f654d; font-size: .75rem; font-weight: 850; }
-.coin-stack { display: flex; min-height: 30px; flex-direction: column-reverse; justify-content: flex-start; gap: 1px; }
-.allowance-coin { width: 18px; height: 8px; border: 1px solid #ba9332; border-radius: 50%; background: linear-gradient(to top, var(--yellow) var(--coin-fill), #fff9df var(--coin-fill)); box-shadow: inset 0 -1px 0 rgba(98, 72, 16, .16); }
-.allowance-note { margin: 0; color: #655426; font-size: .75rem; font-weight: 800; text-align: center; }
+.allowance-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 10px; }
+.allowance-plan { display: grid; justify-items: center; min-width: 0; padding: 10px 7px 9px; border: 1px solid #dfc36f; border-radius: 13px; background: rgba(255, 255, 255, .72); text-align: center; }
+.allowance-time { color: #655426; font-size: .8rem; font-weight: 900; }
+.plan-coin-pile { display: flex; min-height: 38px; flex-direction: column-reverse; justify-content: flex-start; gap: 1px; margin: 6px 0; }
+.plan-coin { width: 28px; height: 7px; border: 1px solid #ad8422; border-radius: 50%; background: var(--yellow); box-shadow: inset 0 -2px 0 rgba(98, 72, 16, .16); }
+.allowance-plan strong { font-size: 1.08rem; line-height: 1.15; }
+.allowance-months { color: #776b50; font-size: .75rem; font-weight: 750; }
+.allowance-note { margin: 0; color: #655426; font-size: .75rem; font-weight: 800; line-height: 1.35; text-align: center; }
 
 .goal-box { margin-top: 15px; padding: 17px; border: 1.5px dashed #9ab9cb; border-radius: 18px; background: #f2f8fb; }
 .goal-top { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
