@@ -736,15 +736,17 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
             </section>
           </div>
 
-          <MonthlyStory transactions={moneyMap.transactions} storyMonth={storyMonth} setStoryMonth={setStoryMonth} />
+          <div className="lower-grid">
+            <MonthlyStory transactions={moneyMap.transactions} storyMonth={storyMonth} setStoryMonth={setStoryMonth} />
 
-          <section className="panel panel-pad ledger" aria-labelledby="ledger-heading">
-            <div className="ledger-toolbar">
-              <div><h2 id="ledger-heading">My money moves</h2><p>{moneyMap.transactions.length ? `${moneyMap.transactions.length} money ${moneyMap.transactions.length === 1 ? 'move' : 'moves'} saved in the family account.` : 'Your income and expenses will appear here.'}</p></div>
-              <div className="field filter-control"><label htmlFor="filter-input">Show</label><select className="select" id="filter-input" value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)}><option value="all">All moves</option><option value="income">Money in</option><option value="expense">Money out</option></select></div>
-            </div>
-            <TransactionList transactions={moneyMap.transactions} filter={filter} edit={startEditing} remove={(transaction) => void removeTransaction(transaction)} disabled={writeDisabled} />
-          </section>
+            <section className="panel panel-pad ledger" aria-labelledby="ledger-heading">
+              <div className="ledger-toolbar">
+                <div><h2 id="ledger-heading">My money moves</h2><p>{moneyMap.transactions.length ? `${moneyMap.transactions.length} money ${moneyMap.transactions.length === 1 ? 'move' : 'moves'} saved in the family account.` : 'Your income and expenses will appear here.'}</p></div>
+                <div className="field filter-control"><label htmlFor="filter-input">Show</label><select className="select" id="filter-input" value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)}><option value="all">All moves</option><option value="income">Money in</option><option value="expense">Money out</option></select></div>
+              </div>
+              <TransactionList transactions={moneyMap.transactions} filter={filter} edit={startEditing} remove={(transaction) => void removeTransaction(transaction)} disabled={writeDisabled} />
+            </section>
+          </div>
         </main>
 
         <footer className="page-footer"><span>Private by design — saved to your family’s Supabase account.</span><span>Money skills grow one choice at a time.</span></footer>
