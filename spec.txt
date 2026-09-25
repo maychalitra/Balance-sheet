@@ -2,203 +2,139 @@ HANZO'S MONEY MAP — PRODUCT SPECIFICATION
 
 1. PRODUCT PURPOSE
 
-Hanzo's Money Map is a cheerful, private balance-sheet website designed for Hanzo, the owner's 11-year-old son. It helps Hanzo record money coming in and going out, understand the balance, and give each euro a simple job. The language must be encouraging and easy to understand without hiding the real ideas of income, expenses, saving, investing, goals, and generosity.
+Hanzo's Money Map is a cheerful, private balance-sheet application for Hanzo, the owner's 11-year-old son. It helps Hanzo record money coming in and going out, understand his balance, and give each euro a simple job. Language is encouraging and child-friendly without hiding the real ideas of income, expenses, saving, investing, goals, and generosity.
 
-The finished application is one self-contained index.html file. All markup, styles, and JavaScript are inline. It must work as a static page without a server account, database, framework, build step, external font, external image, library, API, or internet connection. The file should also be suitable for a future static Vercel upload.
+The application is a Vite, React, and TypeScript single-page app. Supabase is the only persistent store for financial records and plan settings. The app requires an internet connection for initial loading and all writes. Currency is fixed to EUR.
 
-Currency is fixed to EUR.
+The visual direction remains a warm notebook-inspired working dashboard with cream paper, dark green text, yellow highlights, rounded cards, clear grouping, and distinct colors for the five money jobs.
 
-2. PRIMARY DASHBOARD
+2. PRIVATE FAMILY ACCESS
 
-The first screen must show:
+- Exactly one family account is pre-created and confirmed by an adult in Supabase Auth.
+- The app supports email/password sign-in, remembered sessions, sign-out, reset-email requests, and choosing a new password after following the recovery link.
+- There is no public registration interface.
+- The Supabase publishable key may be present in the browser. Secret and service-role keys must never be included in frontend code or environment files intended for the browser.
+- All database tables use Row Level Security. Authenticated users can select, insert, update, and delete only rows whose user_id equals auth.uid(). Anonymous users receive no table or RPC access.
+
+3. PRIMARY DASHBOARD
+
+After authentication and cloud loading, the first screen shows:
 
 - Money I have: total income minus total expenses.
 - Money in: the sum of all income entries.
 - Money out: the sum of all expense entries.
-- A smart money note that changes according to the current data.
-- The five-job money plan and cumulative suggested EUR amount for each job.
+- A deterministic smart money note based on current data.
+- The five-job money plan and cumulative suggested amount for each job.
 - Big Goal progress.
-- A form for adding an income or expense.
+- A form for adding or editing an income or expense.
 - Hanzo's Monthly Money Story with a weekly running-balance chart.
 - A newest-first history of saved money moves.
+- Controls for cloud refresh, backup, restore, plan settings, and sign-out.
 
-3. FIVE-JOB MONEY PLAN
+4. FIVE-JOB MONEY PLAN AND BIG GOAL
 
-Recommended allocation:
+The recommended allocation is:
 
-- Long-term investment: 20%. Friendly description: money to grow for the future with an adult. The website must explain that investments can rise or fall and must not recommend investment products.
+- Long-term investment: 20%. Money to grow for the future with an adult. The app explains that investments can rise or fall and does not recommend products.
 - Big goal: 30%. Money for a specific goal that matters to the child.
 - Planned spending: 30%. Purchases the child thinks about before buying.
 - Fun now: 10%. Guilt-free money the child can enjoy without overthinking.
 - Giving: 10%. Gifts, helping another person, or supporting a chosen cause.
 
-The allocation is guidance calculated from total income; it does not represent five separate bank accounts.
+The allocation is guidance calculated from total income and does not represent separate bank accounts. An adult can edit all percentages. Values must be whole numbers from 0 through 100 and total exactly 100. “Use recommended plan” restores 20/30/30/10/10.
 
-An adult can edit all five percentages in Plan settings. Values must be whole numbers from 0 through 100 and must total exactly 100 before they can be saved. A “Use recommended plan” control restores 20/30/30/10/10 in the settings form.
+When a valid income is entered, the form previews its exact split. All monetary calculations use integer euro cents. Rounding remainders are distributed deterministically so displayed parts always add to the original amount.
 
-When a valid income amount is entered, the form previews the exact EUR split before the transaction is saved. Cumulative bucket amounts are calculated from all recorded income. Calculations use euro cents and distribute any rounding remainder so the five displayed amounts always add up exactly to the original income amount.
-
-Example for EUR 10.00:
-
-- Investment: EUR 2.00
-- Big goal: EUR 3.00
-- Planned spending: EUR 3.00
-- Fun: EUR 1.00
-- Giving: EUR 1.00
-
-4. BIG GOAL
-
-Plan settings allow a goal name of up to 60 characters and an optional positive target amount with at most two decimal places. When a target exists, progress equals the cumulative Big Goal allocation divided by the target and is capped visually at 100%. The interface shows the allocated amount, target, and rounded percentage. Without a target, it invites the child to set one with an adult.
+The goal name is optional and limited to 60 characters. The optional target is from EUR 0.00 through EUR 1,000,000,000.00 with at most two decimals. Progress equals cumulative Big Goal allocation divided by the target and is visually capped at 100%.
 
 5. MONEY MOVES
 
 Each transaction contains:
 
-- id: unique non-empty string.
-- date: real ISO date in YYYY-MM-DD format, not later than today.
+- id: unique non-empty text, at most 120 characters.
+- user_id: the authenticated family owner.
+- date: a real ISO date in YYYY-MM-DD form, not later than today.
 - type: income or expense.
-- amount: positive EUR value, maximum EUR 1,000,000,000, with no more than two decimal places.
-- category: one recognized category for the selected type.
-- note: optional plain text, maximum 120 characters.
-- createdAt: numeric creation timestamp used to order entries sharing a date.
+- amount: positive integer euro cents, at most 100,000,000,000 cents.
+- category: one category recognized for the selected type.
+- note: optional plain text, at most 120 characters.
+- createdAt and updatedAt: cloud timestamps.
 
-Income categories:
+Income categories: Allowance, Chore, Gift, Sale, Other.
 
-- Allowance
-- Chore
-- Gift
-- Sale
-- Other
+Expense categories: Food & Drink, School, Transport, Planned Purchase, Fun, Giving, Goal Purchase, Other.
 
-Expense categories:
+The child can add, edit, and delete transactions. Editing keeps the original ID and creation time. Deleting requires confirmation. The history sorts by date newest-first and then creation time, and it can be filtered to all moves, income, or expenses.
 
-- Food & Drink
-- School
-- Transport
-- Planned Purchase
-- Fun
-- Giving
-- Goal Purchase
-- Other
+Writes are remote-write-first: the UI reflects a mutation only after Supabase confirms it. Buttons prevent duplicate submissions while a request is pending. Concurrent edits use last successful write wins.
 
-The child can add, edit, and delete transactions. Editing keeps the original id and creation timestamp. Deleting requires confirmation. The list is sorted by date newest-first, then by creation time, and can be filtered to all moves, income only, or expenses only.
+6. MONTHLY MONEY STORY AND CALCULATIONS
 
-6. MONTHLY MONEY STORY
+- The current month opens by default. Arrows navigate months, future months are blocked, and “This month” returns to the current month.
+- The month displays income, expenses, and total account balance after that month's moves.
+- A responsive line chart begins with balance carried into the month and plots the closing balance after every Monday-through-Sunday calendar week clipped to the month.
+- The chart has week and EUR labels, directly labelled points, an accessible title, a complete text summary, and a clear empty-month message.
+- Weekly chapters show date range, money in, money out, closing balance, and expandable transaction lines.
+- The current week opens by default for the current month. A past month opens its latest week containing entries.
 
-The dashboard includes “Hanzo's Monthly Money Story,” which combines a monthly overview with weekly chapters:
+Totals, allocation splits, goal progress, chart balances, and all comparisons use integer cents. Visible values use EUR formatting with two decimal places.
 
-- The current month opens by default.
-- Previous and next arrows move between months. Future months cannot be selected.
-- A “This month” button returns from a past month to the current one.
-- Three values show income recorded during the selected month, expenses recorded during the selected month, and the total account balance after that month's recorded moves.
-- A responsive line chart begins with the balance carried into the month and plots the closing balance after each calendar week.
-- The chart has visible week and EUR labels, directly labeled points, a text summary for screen readers, and a clear empty-month message.
-- Weeks run Monday through Sunday and are clipped at the beginning and end of the selected month, producing four to six chapters.
-- Each weekly chapter shows its date range, money in, money out, and closing balance.
-- Expanding a chapter reveals its transactions line by line with date, category, optional note, and signed amount.
-- The current week opens by default for the current month. In a past month, the latest week containing entries opens by default.
-- Empty weeks say “No money moves this week.”
-- A supportive sentence explains whether Hanzo kept more, spent more, broke even, or recorded no moves that month.
+Smart notes cover no entries, spending above income, goal completion, Fun spending above guidance, Giving, planning income before spending, low overall spending, and a general goal-reflection prompt.
 
-The story is calculated from the existing transaction list and does not add fields to the saved-data or backup format.
+7. SUPABASE DATA MODEL
 
-7. CALCULATIONS AND SMART NOTES
+money_map_settings contains one row per auth user with currency, five allocation percentages, goal name, target cents, and updated timestamp. Database checks enforce EUR, percentage ranges and total, goal length, and target range.
 
-- Total income = sum of all income transactions.
-- Total expenses = sum of all expense transactions.
-- Current balance = total income minus total expenses.
-- All visible money values use clear EUR formatting with two decimal places.
+transactions uses a composite user_id/id primary key. Database checks and a trigger enforce ID length, non-future date, type, amount range, type-specific category, note length, and timestamps. An index covers owner, date descending, and creation time descending.
 
-Smart notes are deterministic, supportive, and offline. They should cover at least these situations:
+Both tables enable RLS with explicit select, insert, update, and delete policies for authenticated owners. Grants are revoked from anonymous users.
 
-- No entries: invite the first money move.
-- Expenses above income: suggest pausing and reviewing the plan with an adult.
-- Big Goal fully planned: celebrate the achievement.
-- Fun expenses above the Fun allocation guide: encourage reflection without blame.
-- Giving recorded: recognize the kind choice.
-- Income recorded before spending: celebrate planning first.
-- Low overall spending: recognize keeping money for the future.
-- General state: ask whether a purchase matters more than the Big Goal.
+The authenticated reset_money_map RPC atomically deletes the owner's transactions and restores default settings. The authenticated replace_money_map RPC validates a complete version 1 backup and atomically replaces only the caller's rows. Both use auth.uid(), run with invoker rights, and cannot be executed by anonymous users.
 
-8. STORAGE, BACKUP, AND SAFETY
+8. CLOUD LOADING, CONNECTION FAILURE, AND BROWSER STORAGE
 
-The app is intentionally for one child on one browser. It has no account or synchronization.
+- On authentication, the app creates the default settings row if needed and fetches settings and transactions from Supabase.
+- Supabase remains authoritative. Reloading the page always fetches cloud data.
+- Manual Refresh retrieves current settings and transactions. Realtime subscriptions are not used.
+- If loading fails before data is available, the app shows a retry and sign-out screen.
+- If the connection fails after data loads, the last loaded data remains visible only in React memory, write controls are disabled, unsent form input remains, and the user can retry.
+- Financial data and drafts are never persisted in localStorage, sessionStorage, IndexedDB, or Cache Storage.
+- The obsolete localStorage key kidMoneyTracker.v1 is removed on startup and its former contents are not imported.
+- Supabase Auth may persist only its login session so the family remains signed in.
 
-State is saved as JSON in localStorage using the key kidMoneyTracker.v1. The state shape is:
+9. BACKUP, RESTORE, AND CLEAR
 
-{
-  "version": 1,
-  "currency": "EUR",
-  "allocation": {
-    "investment": 20,
-    "goal": 30,
-    "planned": 30,
-    "fun": 10,
-    "giving": 10
-  },
-  "goal": {
-    "name": "",
-    "targetAmount": 0
-  },
-  "transactions": []
-}
+Backup export downloads readable version 1 JSON named hanzo-money-map-backup-YYYY-MM-DD.json. The JSON retains the established EUR-decimal backup contract even though runtime and database calculations use cents.
 
-The app must continue in memory if browser storage is unavailable and clearly warn the user to download a backup before closing.
+Restore accepts JSON files no larger than 1 MB and no more than 10,000 transactions. The complete file is validated in the browser for version, currency, allocation, goal, unique IDs, dates, types, amounts, categories, notes, and timestamps. Confirmation is required. The PostgreSQL RPC repeats authoritative validation and replaces data inside one transaction so invalid input or any failure leaves existing cloud data untouched.
 
-Backup export downloads a readable, versioned JSON file named hanzo-money-map-backup-YYYY-MM-DD.json. Restore accepts JSON files no larger than 1 MB. Before replacing current data, the complete file must be parsed and validated for supported version, EUR currency, allocation total, goal limits, unique transaction ids, dates, types, amounts, categories, notes, and a maximum of 10,000 transactions. Invalid files must leave existing data untouched and show a clear error. Valid restore requires confirmation.
+Clear everything requires confirmation and calls the atomic reset RPC. It restores recommended allocation, an empty goal, and no transactions.
 
-“Clear everything” requires confirmation and restores the recommended allocation, an empty goal, and an empty transaction list.
+10. ACCESSIBILITY AND RESPONSIVE BEHAVIOR
 
-User-provided goal names and notes must be inserted as text, never executable HTML.
-
-9. VISUAL AND INTERACTION DESIGN
-
-- Warm notebook-inspired palette with cream paper, dark green text, yellow highlights, and distinct colors for the five jobs.
-- Friendly rounded cards, clear grouping, light borders, and restrained shadows.
-- Income is green; expenses are coral/red. Color is never the only signal.
-- Working dashboard rather than a marketing page: totals and primary controls appear immediately.
-- The visible title is “Hanzo's Money Map,” with “Hanzo's balance sheet” as the small brand label.
-- Large readable text and touch targets of at least 44 pixels for primary controls.
-- Mobile layout stacks panels and transaction details without horizontal scrolling.
-- Desktop layout places the money plan beside the transaction form.
-- The monthly line chart redraws to remain readable on desktop and mobile, and weekly chapters reflow into compact notebook-style rows.
-- Empty, populated, editing, filtered, success, warning, error, storage-unavailable, and confirmation states are included.
+- Use semantic headings, sections, forms, fieldsets, labels, buttons, lists, progress semantics, SVG titles, and native details/summary disclosures.
+- Provide a skip link and visible keyboard focus.
+- Every input has a visible label; icon-only mobile actions retain accessible names through button text/title.
+- Validation errors use plain language, an alert region, and focus the field needing attention.
+- Success feedback uses a polite live region. Connection failure uses an alert.
+- Controls are at least 44 pixels high where they are primary touch targets.
+- The layout stacks without horizontal page scrolling on narrow screens and keeps the money plan beside the entry form on desktop.
 - Respect prefers-reduced-motion.
-
-10. ACCESSIBILITY
-
-- Use semantic headings, sections, forms, fieldsets, labels, buttons, and lists.
-- Provide a skip link to the tracker.
-- Every input has a visible label and every icon-only action has an accessible name.
-- Keyboard users can reach and operate every control with a clearly visible focus indicator.
-- Validation errors are written in plain language, announced to assistive technology, and focus the field needing attention.
-- Success feedback uses a polite live region.
-- Big Goal progress exposes an accessible progress value.
-- The monthly chart has a concise accessible title and a complete text summary of the starting and weekly balances.
-- Weekly chapters use native expandable disclosure controls and remain usable by keyboard.
-- Text and essential controls maintain strong contrast.
 
 11. ACCEPTANCE CRITERIA
 
-- Adding income increases income and balance and updates all five allocations.
-- Adding an expense increases expenses and decreases balance.
-- Editing and deleting recalculate every affected value immediately.
-- Date, amount, category, goal, note, and percentage validation work as specified.
-- Every income split adds up to the exact original value, including awkward cent amounts.
-- Percentages cannot be saved unless they total exactly 100.
-- The recommended allocation can be restored.
-- Goal progress and each smart-note state display correctly.
-- Month navigation, current-month return, and the future-month limit work correctly.
-- Monthly income, expense, starting balance, ending balance, weekly totals, and weekly closing balances are correct across month and year boundaries.
-- Weekly chapters show the correct transaction lines and useful empty states.
-- The chart stays legible and accurately labeled at narrow mobile and wide desktop sizes.
-- Entries, settings, and goals survive a normal refresh when localStorage is available.
-- Exported data can be restored; malformed or incompatible data cannot overwrite current data.
-- Clearing data requires explicit confirmation.
-- The page works at narrow mobile and wide desktop widths, with keyboard navigation and useful screen-reader text.
-- Opening index.html provides the complete application and no external request is required.
+- The pre-created user can sign in, remain signed in across refresh, sign out, request password recovery, and set a new password. There is no sign-up flow.
+- Anonymous users and a different authenticated user cannot access the family rows or RPC operations.
+- All existing dashboard calculations and workflows remain correct after migration to cents and Supabase.
+- Adding, editing, deleting, settings updates, restore, and reset are visible only after successful cloud confirmation.
+- Failed cloud operations preserve input and do not display unsaved changes as committed.
+- Refresh loads changes made on another device. Changes are not pushed live.
+- Awkward-cent allocation splits always add to the exact source income.
+- Monthly calculations work across week, month, and year boundaries.
+- Backups round-trip through export and atomic restore; malformed data cannot replace current data.
+- No financial data is written to browser persistence; the retired storage key is removed.
+- Unit tests and the production build pass, and the app remains accessible and usable on narrow mobile and wide desktop layouts.
 
 12. DELIVERY
 
-Deliver index.html as the only application file and this spec.txt as its documentation. Keep the site local for now. Do not deploy it. A future Vercel deployment can serve index.html as a static root page without application changes.
-Ddssssssssssss
+Deliver the React/Vite source, package lock, Supabase migration, tests, README setup instructions, and this specification. Keep the project local. A future static host may serve the built dist directory after its HTTPS URL is added to Supabase Auth redirect settings.

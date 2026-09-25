@@ -1,0 +1,78 @@
+export const ALLOCATION_KEYS = ['investment', 'goal', 'planned', 'fun', 'giving'] as const
+
+export type AllocationKey = (typeof ALLOCATION_KEYS)[number]
+export type TransactionType = 'income' | 'expense'
+
+export interface Allocation {
+  investment: number
+  goal: number
+  planned: number
+  fun: number
+  giving: number
+}
+
+export interface Goal {
+  name: string
+  targetCents: number
+}
+
+export interface Transaction {
+  id: string
+  date: string
+  type: TransactionType
+  amountCents: number
+  category: string
+  note: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MoneyMap {
+  allocation: Allocation
+  goal: Goal
+  transactions: Transaction[]
+  updatedAt: string
+}
+
+export interface TransactionDraft {
+  id?: string
+  date: string
+  type: TransactionType
+  amountCents: number
+  category: string
+  note: string
+  createdAt?: string
+}
+
+export interface Totals {
+  incomeCents: number
+  expenseCents: number
+  balanceCents: number
+}
+
+export interface WeekStory {
+  number: number
+  firstDay: number
+  lastDay: number
+  firstISO: string
+  lastISO: string
+  transactions: Transaction[]
+  incomeCents: number
+  expenseCents: number
+  closingBalanceCents: number
+}
+
+export interface MonthStory {
+  year: number
+  month: number
+  name: string
+  firstISO: string
+  lastISO: string
+  startingBalanceCents: number
+  endingBalanceCents: number
+  incomeCents: number
+  expenseCents: number
+  changeCents: number
+  transactions: Transaction[]
+  weeks: WeekStory[]
+}
