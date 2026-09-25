@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { RECOMMENDED_ALLOCATION } from '../constants'
 import type { Transaction } from '../types'
-import { buildMonthStory, calculateTotals, parseEurosToCents, smartTip, splitCents } from './money'
+import { buildAllowanceYear, buildMonthStory, calculateTotals, parseEurosToCents, smartTip, splitCents } from './money'
 
 function transaction(overrides: Partial<Transaction> = {}): Transaction {
   return {
@@ -70,5 +70,24 @@ describe('monthly story', () => {
     expect(story.expenseCents).toBe(400)
     expect(story.endingBalanceCents).toBe(3000)
     expect(story.weeks.at(-1)?.closingBalanceCents).toBe(3000)
+  })
+})
+
+describe('yearly allowance', () => {
+  it('groups only allowance income from the selected year', () => {
+    const transactions = [
+      transaction({ id: 'jan-allowance', date: '2026-01-03', amountCents: 1500 }),
+      transaction({ id: 'feb-allowance', date: '2026-02-03', amountCents: 1000 }),
+      transaction({ id: 'feb-extra', date: '2026-02-18', amountCents: 500 }),
+      transaction({ id: 'gift', date: '2026-02-20', category: 'Gift', amountCents: 2500 }),
+      transaction({ id: 'old-allowance', date: '2025-12-03', amountCents: 1500 }),
+      transaction({ id: 'allowance-spend', date: '2026-03-03', type: 'expense', category: 'Fun', amountCents: 400 }),
+    ]
+
+    const allowance = buildAllowanceYear(transactions, 2026)
+    expect(allowance.months[0]).toBe(1500)
+    expect(allowance.months[1]).toBe(1500)
+    expect(allowance.months.slice(2)).toEqual(Array(10).fill(0))
+    expect(allowance.totalCents).toBe(3000)
   })
 })

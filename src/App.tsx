@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import {
   ALLOCATION_LABELS,
@@ -6,6 +6,7 @@ import {
   CATEGORY_OPTIONS,
   MAX_AMOUNT_CENTS,
   MAX_BACKUP_BYTES,
+  MONTHLY_ALLOWANCE_CENTS,
   RECOMMENDED_ALLOCATION,
   STORAGE_KEY,
 } from './constants'
@@ -23,6 +24,7 @@ import {
 } from './lib/data-service'
 import {
   allocationTotal,
+  buildAllowanceYear,
   buildMonthStory,
   calculateTotals,
   centsToInput,
@@ -628,34 +630,38 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
           </aside>
 
           <div className="workspace-grid">
-            <section className="panel panel-pad plan-reminder" aria-labelledby="plan-heading">
-              <div className="section-head">
-                <div><h2 id="plan-heading">Give your money five jobs</h2><p>Your guide updates whenever money comes in.</p></div>
-                <span className="total-pill">100% planned</span>
-              </div>
-              <div className="bucket-list">
-                {ALLOCATION_KEYS.map((key) => {
-                  const detail = BUCKET_DETAILS[key]
-                  return (
-                    <article className={`bucket ${detail.className}`} key={key}>
-                      <div className="bucket-icon" aria-hidden="true">{detail.icon}</div>
-                      <div><p className="bucket-name">{detail.name}</p><p className="bucket-desc">{detail.description}</p></div>
-                      <div className="bucket-value"><span className="bucket-percent">{moneyMap.allocation[key]}%</span><span className="bucket-money">{formatMoney(allocationSplit[key])}</span></div>
-                    </article>
-                  )
-                })}
-              </div>
-              <div className="goal-box" aria-labelledby="goal-name-display">
-                <div className="goal-top">
-                  <strong id="goal-name-display">{moneyMap.goal.name || 'My big goal'}</strong>
-                  <span>{moneyMap.goal.targetCents > 0 ? `${formatMoney(allocationSplit.goal)} of ${formatMoney(moneyMap.goal.targetCents)}` : 'Set a target with an adult'}</span>
+            <div className="reminder-rail">
+              <section className="panel panel-pad plan-reminder" aria-labelledby="plan-heading">
+                <div className="section-head">
+                  <div><h2 id="plan-heading">Give your money five jobs</h2><p>Your guide updates whenever money comes in.</p></div>
+                  <span className="total-pill">100% planned</span>
                 </div>
-                <div className="progress-track" role="progressbar" aria-label="Big goal progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(goalPercent)}>
-                  <div className="progress-bar" style={{ width: `${goalPercent}%` }} />
+                <div className="bucket-list">
+                  {ALLOCATION_KEYS.map((key) => {
+                    const detail = BUCKET_DETAILS[key]
+                    return (
+                      <article className={`bucket ${detail.className}`} key={key}>
+                        <div className="bucket-icon" aria-hidden="true">{detail.icon}</div>
+                        <div><p className="bucket-name">{detail.name}</p><p className="bucket-desc">{detail.description}</p></div>
+                        <div className="bucket-value"><span className="bucket-percent">{moneyMap.allocation[key]}%</span><span className="bucket-money">{formatMoney(allocationSplit[key])}</span></div>
+                      </article>
+                    )
+                  })}
                 </div>
-                <p className="goal-caption">{moneyMap.goal.targetCents > 0 ? `${Math.round(goalPercent)}% planned from all your income.` : 'Open Plan settings to choose what you are saving for.'}</p>
-              </div>
-            </section>
+                <div className="goal-box" aria-labelledby="goal-name-display">
+                  <div className="goal-top">
+                    <strong id="goal-name-display">{moneyMap.goal.name || 'My big goal'}</strong>
+                    <span>{moneyMap.goal.targetCents > 0 ? `${formatMoney(allocationSplit.goal)} of ${formatMoney(moneyMap.goal.targetCents)}` : 'Set a target with an adult'}</span>
+                  </div>
+                  <div className="progress-track" role="progressbar" aria-label="Big goal progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(goalPercent)}>
+                    <div className="progress-bar" style={{ width: `${goalPercent}%` }} />
+                  </div>
+                  <p className="goal-caption">{moneyMap.goal.targetCents > 0 ? `${Math.round(goalPercent)}% planned from all your income.` : 'Open Plan settings to choose what you are saving for.'}</p>
+                </div>
+              </section>
+
+              <AllowanceYearCard transactions={moneyMap.transactions} />
+            </div>
 
             <section className="panel panel-pad entry-panel" id="entry-panel" aria-labelledby="form-title">
               <div className="section-head"><div><h2 id="form-title">{editingId ? 'Edit this money move' : 'Add a money move'}</h2><p>What changed today?</p></div></div>
@@ -757,6 +763,40 @@ function TransactionList({ transactions, filter, edit, remove, disabled }: { tra
         </li>
       ))}
     </ul>
+  )
+}
+
+const ALLOWANCE_MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
+const ALLOWANCE_MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+function AllowanceYearCard({ transactions }: { transactions: Transaction[] }) {
+  const year = new Date().getFullYear()
+  const allowance = useMemo(() => buildAllowanceYear(transactions, year), [transactions, year])
+  const annualTargetCents = MONTHLY_ALLOWANCE_CENTS * 12
+  const remainingCents = Math.max(0, annualTargetCents - allowance.totalCents)
+
+  return (
+    <section className="panel allowance-card" aria-labelledby="allowance-heading">
+      <div className="allowance-head">
+        <div><p className="allowance-kicker">€15 each month</p><h2 id="allowance-heading">Allowance coin pile</h2></div>
+        <span>{year}</span>
+      </div>
+      <p className="allowance-total"><strong>{formatMoney(allowance.totalCents)}</strong><span> of {formatMoney(annualTargetCents)}</span></p>
+      <div className="allowance-piles" aria-label={`${year} allowance by month`}>
+        {allowance.months.map((amountCents, month) => (
+          <div className="allowance-month" key={ALLOWANCE_MONTH_NAMES[month]} role="img" aria-label={`${ALLOWANCE_MONTH_NAMES[month]}: ${formatMoney(amountCents)}`}>
+            <div className="coin-stack" aria-hidden="true">
+              {[0, 1, 2].map((coin) => {
+                const fill = Math.max(0, Math.min(100, (amountCents - coin * 500) / 500 * 100))
+                return <span className="allowance-coin" key={coin} style={{ '--coin-fill': `${fill}%` } as CSSProperties} />
+              })}
+            </div>
+            <span aria-hidden="true">{ALLOWANCE_MONTH_LABELS[month]}</span>
+          </div>
+        ))}
+      </div>
+      <p className="allowance-note">{remainingCents > 0 ? `${formatMoney(remainingCents)} left to collect this year` : 'Full year collected — amazing! 🌟'}</p>
+    </section>
   )
 }
 

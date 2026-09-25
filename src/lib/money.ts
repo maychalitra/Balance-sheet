@@ -81,6 +81,23 @@ export function calculateTotals(transactions: Transaction[]): Totals {
   }, { incomeCents: 0, expenseCents: 0, balanceCents: 0 })
 }
 
+export function buildAllowanceYear(transactions: Transaction[], year: number) {
+  const months = Array.from({ length: 12 }, () => 0)
+  const yearPrefix = `${year}-`
+
+  for (const transaction of transactions) {
+    if (transaction.type !== 'income' || transaction.category !== 'Allowance' || !transaction.date.startsWith(yearPrefix)) continue
+    const month = Number(transaction.date.slice(5, 7)) - 1
+    if (month >= 0 && month < 12) months[month] += transaction.amountCents
+  }
+
+  return {
+    year,
+    months,
+    totalCents: months.reduce((total, amount) => total + amount, 0),
+  }
+}
+
 export function smartTip(transactions: Transaction[], totals: Totals, goalName: string, goalTargetCents: number, allocation: Allocation): string {
   if (!transactions.length) return 'Hanzo, add your first money move and give every euro a job.'
   if (totals.balanceCents < 0) return 'Your spending is bigger than your income. Pause, check the list, and make a new plan with an adult.'

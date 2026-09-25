@@ -151,6 +151,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .tip-text { color: #584c2d; font-weight: 700; }
 
 .workspace-grid { display: grid; grid-template-columns: minmax(260px, 310px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.reminder-rail { position: sticky; top: 18px; display: grid; gap: 12px; }
 .panel { border: 1px solid rgba(23, 53, 47, .12); border-radius: var(--radius-xl); background: rgba(255, 253, 247, .95); box-shadow: var(--shadow); }
 .panel-pad { padding: clamp(19px, 3vw, 28px); }
 .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 19px; }
@@ -173,7 +174,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .bucket-fun .bucket-icon { background: var(--coral-soft); }
 .bucket-give .bucket-icon { background: var(--rose-soft); }
 
-.plan-reminder { position: sticky; top: 18px; padding: 16px; border-radius: 20px; }
+.plan-reminder { padding: 16px; border-radius: 20px; }
 .plan-reminder .section-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-bottom: 12px; }
 .plan-reminder .section-head h2 { font-size: 1.05rem; }
 .plan-reminder .section-head p { margin-top: 2px; font-size: .78rem; line-height: 1.35; }
@@ -192,6 +193,20 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .plan-reminder .goal-top span { font-size: .72rem; }
 .plan-reminder .progress-track { height: 8px; }
 .plan-reminder .goal-caption { display: none; }
+
+.allowance-card { overflow: hidden; padding: 15px 16px 13px; border-radius: 20px; background: linear-gradient(145deg, #fff6c9, #fffdf7 62%); }
+.allowance-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.allowance-head h2, .allowance-head p { margin: 0; }
+.allowance-head h2 { font-size: 1rem; letter-spacing: -.02em; }
+.allowance-head > span { padding: 4px 7px; border-radius: 999px; color: #6a5319; background: rgba(243, 201, 94, .38); font-size: .75rem; font-weight: 900; }
+.allowance-kicker { color: #776229; font-size: .75rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.allowance-total { margin: 7px 0 0; color: var(--ink-soft); font-size: .78rem; font-weight: 750; }
+.allowance-total strong { color: var(--ink); font-size: 1.4rem; line-height: 1; letter-spacing: -.035em; }
+.allowance-piles { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; align-items: end; margin: 12px 0 8px; }
+.allowance-month { display: grid; justify-items: center; gap: 3px; min-width: 0; color: #6f654d; font-size: .75rem; font-weight: 850; }
+.coin-stack { display: flex; min-height: 30px; flex-direction: column-reverse; justify-content: flex-start; gap: 1px; }
+.allowance-coin { width: 18px; height: 8px; border: 1px solid #ba9332; border-radius: 50%; background: linear-gradient(to top, var(--yellow) var(--coin-fill), #fff9df var(--coin-fill)); box-shadow: inset 0 -1px 0 rgba(98, 72, 16, .16); }
+.allowance-note { margin: 0; color: #655426; font-size: .75rem; font-weight: 800; text-align: center; }
 
 .goal-box { margin-top: 15px; padding: 17px; border: 1.5px dashed #9ab9cb; border-radius: 18px; background: #f2f8fb; }
 .goal-top { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
@@ -345,7 +360,7 @@ fieldset.field { padding: 0; border: 0; margin: 0; }
 
 @media (max-width: 900px) {
   .workspace-grid { grid-template-columns: 1fr; }
-  .plan-reminder { position: static; width: min(100%, 360px); justify-self: start; }
+  .reminder-rail { position: static; width: min(100%, 360px); justify-self: start; }
   .entry-panel { position: static; }
   .transaction { grid-template-columns: auto 1fr auto; }
   .transaction-note { grid-column: 2 / -1; grid-row: 2; }

@@ -5,6 +5,7 @@ export const BACKUP_VERSION = 1
 export const MAX_BACKUP_BYTES = 1024 * 1024
 export const MAX_AMOUNT_CENTS = 100_000_000_000
 export const MAX_TRANSACTIONS = 10_000
+export const MONTHLY_ALLOWANCE_CENTS = 1_500
 
 export const RECOMMENDED_ALLOCATION: Allocation = Object.freeze({
   investment: 20,
