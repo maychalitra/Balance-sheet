@@ -1,6 +1,6 @@
 # Hanzo's Money Map
 
-Hanzo's Money Map is a private, family-owned balance-sheet app for an 11-year-old. It uses React and Supabase so money moves and plan settings are stored in the family's cloud account rather than in browser storage.
+Hanzo's Money Map is a private, family-owned income and expense tracker for an 11-year-old. It uses React and Supabase so money moves and plan settings are stored in the family's cloud account rather than in browser storage.
 
 ## What is included
 

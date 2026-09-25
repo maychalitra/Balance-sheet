@@ -169,7 +169,7 @@ function Brand() {
     <div className="brand">
       <div className="brand-mark" aria-hidden="true">🧭</div>
       <div>
-        <p>Hanzo's balance sheet</p>
+        <p>Kid's income &amp; expense tracker</p>
         <h1>Hanzo's Money Map</h1>
       </div>
     </div>

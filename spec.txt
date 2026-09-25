@@ -2,7 +2,7 @@ HANZO'S MONEY MAP — PRODUCT SPECIFICATION
 
 1. PRODUCT PURPOSE
 
-Hanzo's Money Map is a cheerful, private balance-sheet application for Hanzo, the owner's 11-year-old son. It helps Hanzo record money coming in and going out, understand his balance, and give each euro a simple job. Language is encouraging and child-friendly without hiding the real ideas of income, expenses, saving, investing, goals, and generosity.
+Hanzo's Money Map is a cheerful, private income and expense tracker for Hanzo, the owner's 11-year-old son. It helps Hanzo record money coming in and going out, understand his balance, and give each euro a simple job. Language is encouraging and child-friendly without hiding the real ideas of income, expenses, saving, investing, goals, and generosity.
 
 The application is a Vite, React, and TypeScript single-page app. Supabase is the only persistent store for financial records and plan settings. The app requires an internet connection for initial loading and all writes. Currency is fixed to EUR.
 
