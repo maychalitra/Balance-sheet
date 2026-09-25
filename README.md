@@ -8,6 +8,7 @@ Hanzo's Money Map is a private, family-owned balance-sheet app for an 11-year-ol
 - Supabase-only storage protected by Row Level Security
 - Income and expense entry, editing, deletion, filtering, and exact-cent calculations
 - Five-job income plan, goal tracking, smart notes, and monthly weekly-balance story
+- A child-friendly background picker saved to the family account
 - Version 1 JSON backup export and atomic restore
 - Manual cloud refresh, password recovery, connection-error handling, and destructive-action confirmations
 
@@ -16,7 +17,7 @@ The app does not offer public registration and does not store financial records 
 ## 1. Create and configure Supabase
 
 1. Create a Supabase project in the nearest available EU region. Keep the database password in a password manager.
-2. Open the project's SQL Editor and run [`supabase/migrations/202609250001_create_money_map.sql`](supabase/migrations/202609250001_create_money_map.sql). The migration creates the schema, constraints, indexes, RLS policies, and authenticated restore/reset functions.
+2. Open the project's SQL Editor and run every file in `supabase/migrations` in filename order. The first migration creates the secure money-map schema and RPCs; the second adds the saved background theme.
 3. In **Authentication → Providers → Email**, keep email/password enabled and disable new-user sign-up.
 4. In **Authentication → Users**, create and confirm one family user with the adult's email and a strong password.
 5. In **Authentication → URL Configuration**, set the local Site URL and allowed redirect URL to `http://localhost:5173`. Add the deployed HTTPS URL later if the app is published.

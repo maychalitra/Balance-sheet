@@ -2,6 +2,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } fro
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import {
   ALLOCATION_LABELS,
+  BACKGROUND_THEME_OPTIONS,
   BUCKET_DETAILS,
   CATEGORY_OPTIONS,
   MAX_AMOUNT_CENTS,
@@ -10,7 +11,7 @@ import {
   RECOMMENDED_ALLOCATION,
   STORAGE_KEY,
 } from './constants'
-import { ALLOCATION_KEYS, type Allocation, type MoneyMap, type Transaction, type TransactionDraft, type TransactionType } from './types'
+import { ALLOCATION_KEYS, type Allocation, type BackgroundTheme, type MoneyMap, type Transaction, type TransactionDraft, type TransactionType } from './types'
 import { createBackup, validateBackup } from './lib/backup'
 import {
   createTransaction,
@@ -19,6 +20,7 @@ import {
   refreshMoneyMap,
   resetMoneyMap,
   restoreBackup,
+  updateBackgroundTheme,
   updateSettings,
   updateTransaction,
 } from './lib/data-service'
@@ -370,6 +372,7 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
   const [busy, setBusy] = useState<string | null>(null)
   const [connectionIssue, setConnectionIssue] = useState(initialConnectionIssue)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [themeOpen, setThemeOpen] = useState(false)
   const [toast, setToast] = useState<ToastState>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
@@ -378,6 +381,11 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
   const parsedAmount = parseEurosToCents(amount)
   const previewSplit = type === 'income' && parsedAmount && parsedAmount > 0 ? splitCents(parsedAmount, moneyMap.allocation) : null
   const writeDisabled = Boolean(busy || connectionIssue)
+
+  useEffect(() => {
+    document.body.dataset.backgroundTheme = moneyMap.backgroundTheme
+    return () => { delete document.body.dataset.backgroundTheme }
+  }, [moneyMap.backgroundTheme])
 
   useEffect(() => {
     if (!toast) return
@@ -568,6 +576,25 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
     }
   }
 
+  async function saveTheme(backgroundTheme: BackgroundTheme) {
+    if (writeDisabled || backgroundTheme === moneyMap.backgroundTheme) {
+      setThemeOpen(false)
+      return
+    }
+    setBusy('theme')
+    try {
+      const next = await updateBackgroundTheme(userId, backgroundTheme)
+      setMoneyMap(next)
+      setConnectionIssue('')
+      setThemeOpen(false)
+      notify('Hanzo’s new background is saved!')
+    } catch (error) {
+      markFailure(error, 'The background color could not be saved.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   async function clearEverything() {
     if (writeDisabled) return
     if (!window.confirm('This will delete every money move and reset the plan. This cannot be undone unless you have a backup. Continue?')) return
@@ -600,6 +627,7 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
             <button className="button icon-button" type="button" onClick={() => void handleRefresh()} disabled={Boolean(busy)} title="Refresh cloud data">↻ <span>{busy === 'refresh' ? 'Refreshing' : 'Refresh'}</span></button>
             <button className="button icon-button" type="button" onClick={exportBackup} title="Download a backup">↓ <span>Backup</span></button>
             <button className="button icon-button" type="button" onClick={() => fileInput.current?.click()} disabled={writeDisabled} title="Restore from a backup">↑ <span>Restore</span></button>
+            <button className="button icon-button" type="button" onClick={() => setThemeOpen(true)} disabled={writeDisabled} title="Choose a background color">🎨 <span>Paint</span></button>
             <button className="button button-soft icon-button" type="button" onClick={() => setSettingsOpen(true)} disabled={writeDisabled} title="Parent settings">⚙ <span>Plan</span></button>
             <button className="button icon-button" type="button" onClick={() => void handleSignOut()} disabled={Boolean(busy)} title={`Sign out ${email}`}>⇥ <span>Sign out</span></button>
             <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={(event) => void importFile(event.target.files?.[0])} />
@@ -722,6 +750,14 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
         <footer className="page-footer"><span>Private by design — saved to your family’s Supabase account.</span><span>Money skills grow one choice at a time.</span></footer>
       </div>
 
+      {themeOpen && (
+        <ThemePickerModal
+          currentTheme={moneyMap.backgroundTheme}
+          saving={busy === 'theme'}
+          onClose={() => setThemeOpen(false)}
+          onSave={saveTheme}
+        />
+      )}
       {settingsOpen && (
         <SettingsModal
           moneyMap={moneyMap}
@@ -733,6 +769,42 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
       )}
       {toast && <div className={`toast${toast.error ? ' error' : ''}`} role={toast.error ? 'alert' : 'status'} aria-live={toast.error ? 'assertive' : 'polite'}>{toast.message}</div>}
     </>
+  )
+}
+
+function ThemePickerModal({ currentTheme, saving, onClose, onSave }: { currentTheme: BackgroundTheme; saving: boolean; onClose: () => void; onSave: (theme: BackgroundTheme) => Promise<void> }) {
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) onClose() }}>
+      <section className="dialog-card theme-dialog" role="dialog" aria-modal="true" aria-labelledby="theme-title">
+        <div className="dialog-inner">
+          <div className="dialog-head">
+            <div><h2 id="theme-title">Paint your Money Map</h2><p>Pick the background that feels most like you.</p></div>
+            <button className="button close-button" type="button" onClick={onClose} disabled={saving} aria-label="Close background picker">×</button>
+          </div>
+          <div className="theme-options" role="radiogroup" aria-label="Background colors">
+            {BACKGROUND_THEME_OPTIONS.map((option) => {
+              const selected = option.value === currentTheme
+              return (
+                <button
+                  className={`theme-option${selected ? ' selected' : ''}`}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={saving}
+                  key={option.value}
+                  onClick={() => void onSave(option.value)}
+                >
+                  <span className={`theme-swatch theme-swatch-${option.value}`} aria-hidden="true">{selected ? '✓' : ''}</span>
+                  <strong>{option.label}</strong>
+                  <span>{selected ? 'Your background' : 'Choose this one'}</span>
+                </button>
+              )
+            })}
+          </div>
+          <p className="theme-saving" role="status" aria-live="polite">{saving ? 'Saving your color…' : 'Your choice is saved to the family account.'}</p>
+        </div>
+      </section>
+    </div>
   )
 }
 

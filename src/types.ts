@@ -1,6 +1,8 @@
 export const ALLOCATION_KEYS = ['investment', 'goal', 'planned', 'fun', 'giving'] as const
+export const BACKGROUND_THEMES = ['mint', 'sky', 'sunny', 'peach', 'lilac'] as const
 
 export type AllocationKey = (typeof ALLOCATION_KEYS)[number]
+export type BackgroundTheme = (typeof BACKGROUND_THEMES)[number]
 export type TransactionType = 'income' | 'expense'
 
 export interface Allocation {
@@ -29,6 +31,7 @@ export interface Transaction {
 
 export interface MoneyMap {
   allocation: Allocation
+  backgroundTheme: BackgroundTheme
   goal: Goal
   transactions: Transaction[]
   updatedAt: string

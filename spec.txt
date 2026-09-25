@@ -29,7 +29,7 @@ After authentication and cloud loading, the first screen shows:
 - A form for adding or editing an income or expense.
 - Hanzo's Monthly Money Story with a weekly running-balance chart.
 - A newest-first history of saved money moves.
-- Controls for cloud refresh, backup, restore, plan settings, and sign-out.
+- Controls for cloud refresh, backup, restore, background color, plan settings, and sign-out.
 
 4. FIVE-JOB MONEY PLAN AND BIG GOAL
 
@@ -83,7 +83,7 @@ Smart notes cover no entries, spending above income, goal completion, Fun spendi
 
 7. SUPABASE DATA MODEL
 
-money_map_settings contains one row per auth user with currency, five allocation percentages, goal name, target cents, and updated timestamp. Database checks enforce EUR, percentage ranges and total, goal length, and target range.
+money_map_settings contains one row per auth user with currency, five allocation percentages, goal name, target cents, a background theme, and updated timestamp. Database checks enforce EUR, percentage ranges and total, goal length, target range, and one of the supported background themes.
 
 transactions uses a composite user_id/id primary key. Database checks and a trigger enforce ID length, non-future date, type, amount range, type-specific category, note length, and timestamps. An index covers owner, date descending, and creation time descending.
 

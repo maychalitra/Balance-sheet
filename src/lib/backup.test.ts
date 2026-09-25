@@ -55,6 +55,7 @@ describe('backup export', () => {
   it('converts integer cents and timestamps to the version 1 contract', () => {
     const moneyMap: MoneyMap = {
       allocation: validBackup.allocation,
+      backgroundTheme: 'mint',
       goal: { name: 'Bicycle', targetCents: 25000 },
       updatedAt: '2026-01-05T12:00:00.000Z',
       transactions: [{

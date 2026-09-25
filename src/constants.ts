@@ -1,4 +1,4 @@
-import type { Allocation, AllocationKey, TransactionType } from './types'
+import type { Allocation, AllocationKey, BackgroundTheme, TransactionType } from './types'
 
 export const STORAGE_KEY = 'kidMoneyTracker.v1'
 export const BACKUP_VERSION = 1
@@ -6,6 +6,15 @@ export const MAX_BACKUP_BYTES = 1024 * 1024
 export const MAX_AMOUNT_CENTS = 100_000_000_000
 export const MAX_TRANSACTIONS = 10_000
 export const MONTHLY_ALLOWANCE_CENTS = 1_500
+export const DEFAULT_BACKGROUND_THEME: BackgroundTheme = 'mint'
+
+export const BACKGROUND_THEME_OPTIONS: readonly { value: BackgroundTheme; label: string }[] = [
+  { value: 'mint', label: 'Mint Meadow' },
+  { value: 'sky', label: 'Blue Sky' },
+  { value: 'sunny', label: 'Sunny Day' },
+  { value: 'peach', label: 'Peach Pop' },
+  { value: 'lilac', label: 'Purple Dream' },
+]
 
 export const RECOMMENDED_ALLOCATION: Allocation = Object.freeze({
   investment: 20,

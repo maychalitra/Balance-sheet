@@ -1,6 +1,6 @@
 import type { PostgrestError } from '@supabase/supabase-js'
-import { RECOMMENDED_ALLOCATION } from '../constants'
-import type { Allocation, MoneyMap, Transaction, TransactionDraft } from '../types'
+import { DEFAULT_BACKGROUND_THEME, RECOMMENDED_ALLOCATION } from '../constants'
+import { BACKGROUND_THEMES, type Allocation, type BackgroundTheme, type MoneyMap, type Transaction, type TransactionDraft } from '../types'
 import type { BackupV1 } from './backup'
 import { getSupabaseClient } from './supabase'
 
@@ -14,6 +14,7 @@ interface SettingsRow {
   giving_percent: number
   goal_name: string
   goal_target_cents: number
+  background_theme?: string
   updated_at: string
 }
 
@@ -44,6 +45,12 @@ function mapTransaction(row: TransactionRow): Transaction {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
+}
+
+function mapBackgroundTheme(value: unknown): BackgroundTheme {
+  return typeof value === 'string' && BACKGROUND_THEMES.includes(value as BackgroundTheme)
+    ? value as BackgroundTheme
+    : DEFAULT_BACKGROUND_THEME
 }
 
 async function ensureSettings(userId: string): Promise<void> {
@@ -78,6 +85,7 @@ export async function loadMoneyMap(userId: string): Promise<MoneyMap> {
       fun: settings.fun_percent,
       giving: settings.giving_percent,
     },
+    backgroundTheme: mapBackgroundTheme(settings.background_theme),
     goal: {
       name: settings.goal_name,
       targetCents: Number(settings.goal_target_cents),
@@ -158,6 +166,16 @@ export async function updateSettings(
   return loadMoneyMap(userId)
 }
 
+export async function updateBackgroundTheme(userId: string, backgroundTheme: BackgroundTheme): Promise<MoneyMap> {
+  const client = getSupabaseClient()
+  const { error } = await client
+    .from('money_map_settings')
+    .update({ background_theme: backgroundTheme })
+    .eq('user_id', userId)
+  dataError(error, 'The background color could not be saved.')
+  return loadMoneyMap(userId)
+}
+
 export async function restoreBackup(userId: string, backup: BackupV1): Promise<MoneyMap> {
   const client = getSupabaseClient()
   const { error } = await client.rpc('replace_money_map', { payload: backup })
@@ -175,6 +193,7 @@ export async function resetMoneyMap(userId: string): Promise<MoneyMap> {
 export function defaultMoneyMap(): MoneyMap {
   return {
     allocation: { ...RECOMMENDED_ALLOCATION },
+    backgroundTheme: DEFAULT_BACKGROUND_THEME,
     goal: { name: '', targetCents: 0 },
     transactions: [],
     updatedAt: new Date(0).toISOString(),
