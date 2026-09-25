@@ -628,7 +628,7 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
           </aside>
 
           <div className="workspace-grid">
-            <section className="panel panel-pad" aria-labelledby="plan-heading">
+            <section className="panel panel-pad plan-reminder" aria-labelledby="plan-heading">
               <div className="section-head">
                 <div><h2 id="plan-heading">Give your money five jobs</h2><p>Your guide updates whenever money comes in.</p></div>
                 <span className="total-pill">100% planned</span>

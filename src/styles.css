@@ -150,7 +150,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .tip-kicker { margin-bottom: 2px !important; font-size: .76rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
 .tip-text { color: #584c2d; font-weight: 700; }
 
-.workspace-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, .8fr); gap: 18px; align-items: start; }
+.workspace-grid { display: grid; grid-template-columns: minmax(260px, 310px) minmax(0, 1fr); gap: 18px; align-items: start; }
 .panel { border: 1px solid rgba(23, 53, 47, .12); border-radius: var(--radius-xl); background: rgba(255, 253, 247, .95); box-shadow: var(--shadow); }
 .panel-pad { padding: clamp(19px, 3vw, 28px); }
 .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 19px; }
@@ -172,6 +172,26 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .bucket-plan .bucket-icon { background: var(--green-soft); }
 .bucket-fun .bucket-icon { background: var(--coral-soft); }
 .bucket-give .bucket-icon { background: var(--rose-soft); }
+
+.plan-reminder { position: sticky; top: 18px; padding: 16px; border-radius: 20px; }
+.plan-reminder .section-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-bottom: 12px; }
+.plan-reminder .section-head h2 { font-size: 1.05rem; }
+.plan-reminder .section-head p { margin-top: 2px; font-size: .78rem; line-height: 1.35; }
+.plan-reminder .total-pill { padding: 5px 7px; font-size: .72rem; }
+.plan-reminder .bucket-list { gap: 7px; }
+.plan-reminder .bucket { grid-template-columns: auto minmax(0, 1fr) auto; gap: 9px; min-height: 0; padding: 8px 9px; border-radius: 12px; }
+.plan-reminder .bucket-icon { width: 34px; height: 34px; border-radius: 10px; font-size: 18px; }
+.plan-reminder .bucket-name { font-size: .84rem; line-height: 1.2; }
+.plan-reminder .bucket-desc { display: none; }
+.plan-reminder .bucket-value { grid-column: auto; text-align: right; }
+.plan-reminder .bucket-percent { display: block; font-size: .7rem; line-height: 1.15; }
+.plan-reminder .bucket-money { display: block; font-size: .88rem; line-height: 1.25; }
+.plan-reminder .goal-box { margin-top: 10px; padding: 11px; border-radius: 13px; }
+.plan-reminder .goal-top { display: grid; gap: 2px; margin-bottom: 7px; }
+.plan-reminder .goal-top strong { font-size: .85rem; }
+.plan-reminder .goal-top span { font-size: .72rem; }
+.plan-reminder .progress-track { height: 8px; }
+.plan-reminder .goal-caption { display: none; }
 
 .goal-box { margin-top: 15px; padding: 17px; border: 1.5px dashed #9ab9cb; border-radius: 18px; background: #f2f8fb; }
 .goal-top { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
@@ -325,6 +345,7 @@ fieldset.field { padding: 0; border: 0; margin: 0; }
 
 @media (max-width: 900px) {
   .workspace-grid { grid-template-columns: 1fr; }
+  .plan-reminder { position: static; width: min(100%, 360px); justify-self: start; }
   .entry-panel { position: static; }
   .transaction { grid-template-columns: auto 1fr auto; }
   .transaction-note { grid-column: 2 / -1; grid-row: 2; }
