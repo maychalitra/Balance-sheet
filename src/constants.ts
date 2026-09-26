@@ -1,4 +1,4 @@
-import type { Allocation, AllocationKey, BackgroundTheme, BucketWishes, TransactionType } from './types'
+import type { Allocation, AllocationKey, BackgroundTheme, BucketWishes, SupportedCurrency, TransactionType } from './types'
 
 export const STORAGE_KEY = 'kidMoneyTracker.v1'
 export const BACKUP_VERSION = 1
@@ -23,6 +23,31 @@ export const BACKGROUND_THEME_OPTIONS: readonly { value: BackgroundTheme; label:
   { value: 'sunny', label: 'Sunny Day' },
   { value: 'peach', label: 'Peach Pop' },
   { value: 'lilac', label: 'Purple Dream' },
+]
+
+export const CURRENCY_OPTIONS: readonly { value: SupportedCurrency; label: string }[] = [
+  { value: 'EUR', label: 'EUR — Euro' },
+  { value: 'THB', label: 'THB — Thai baht' },
+  { value: 'USD', label: 'USD — US dollar' },
+  { value: 'GBP', label: 'GBP — British pound' },
+  { value: 'CHF', label: 'CHF — Swiss franc' },
+  { value: 'JPY', label: 'JPY — Japanese yen' },
+  { value: 'CAD', label: 'CAD — Canadian dollar' },
+  { value: 'AUD', label: 'AUD — Australian dollar' },
+  { value: 'CNY', label: 'CNY — Chinese yuan' },
+  { value: 'HKD', label: 'HKD — Hong Kong dollar' },
+  { value: 'SGD', label: 'SGD — Singapore dollar' },
+  { value: 'SEK', label: 'SEK — Swedish krona' },
+  { value: 'NOK', label: 'NOK — Norwegian krone' },
+  { value: 'DKK', label: 'DKK — Danish krone' },
+  { value: 'PLN', label: 'PLN — Polish złoty' },
+  { value: 'CZK', label: 'CZK — Czech koruna' },
+  { value: 'HUF', label: 'HUF — Hungarian forint' },
+  { value: 'RON', label: 'RON — Romanian leu' },
+  { value: 'TRY', label: 'TRY — Turkish lira' },
+  { value: 'INR', label: 'INR — Indian rupee' },
+  { value: 'KRW', label: 'KRW — South Korean won' },
+  { value: 'NZD', label: 'NZD — New Zealand dollar' },
 ]
 
 export const RECOMMENDED_ALLOCATION: Allocation = Object.freeze({

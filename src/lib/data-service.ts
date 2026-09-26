@@ -2,6 +2,7 @@ import type { PostgrestError } from '@supabase/supabase-js'
 import { DEFAULT_BACKGROUND_THEME, DEFAULT_BUCKET_WISHES, MAX_WISH_LENGTH, RECOMMENDED_ALLOCATION } from '../constants'
 import { BACKGROUND_THEMES, type Allocation, type AllocationKey, type BackgroundTheme, type MoneyMap, type Transaction, type TransactionDraft } from '../types'
 import type { BackupV1 } from './backup'
+import { isSupportedCurrency } from './exchange-rates'
 import { getSupabaseClient } from './supabase'
 
 interface SettingsRow {
@@ -29,6 +30,10 @@ interface TransactionRow {
   transaction_date: string
   type: 'income' | 'expense'
   amount_cents: number
+  original_currency?: string | null
+  original_amount_cents?: number | null
+  exchange_rate_to_eur?: number | string | null
+  exchange_rate_date?: string | null
   category: string
   note: string
   created_at: string
@@ -40,11 +45,16 @@ function dataError(error: PostgrestError | null, fallback: string): void {
 }
 
 function mapTransaction(row: TransactionRow): Transaction {
+  const originalCurrency = isSupportedCurrency(row.original_currency) ? row.original_currency : 'EUR'
   return {
     id: row.id,
     date: row.transaction_date,
     type: row.type,
     amountCents: Number(row.amount_cents),
+    originalCurrency,
+    originalAmountCents: Number(row.original_amount_cents ?? row.amount_cents),
+    exchangeRateToEur: Number(row.exchange_rate_to_eur ?? 1),
+    exchangeRateDate: row.exchange_rate_date ?? row.transaction_date,
     category: row.category,
     note: row.note,
     createdAt: row.created_at,
@@ -121,6 +131,10 @@ export async function createTransaction(userId: string, draft: TransactionDraft)
       transaction_date: draft.date,
       type: draft.type,
       amount_cents: draft.amountCents,
+      original_currency: draft.originalCurrency,
+      original_amount_cents: draft.originalAmountCents,
+      exchange_rate_to_eur: draft.exchangeRateToEur,
+      exchange_rate_date: draft.exchangeRateDate,
       category: draft.category,
       note: draft.note,
       created_at: draft.createdAt ?? now,
@@ -140,6 +154,10 @@ export async function updateTransaction(userId: string, id: string, draft: Trans
       transaction_date: draft.date,
       type: draft.type,
       amount_cents: draft.amountCents,
+      original_currency: draft.originalCurrency,
+      original_amount_cents: draft.originalAmountCents,
+      exchange_rate_to_eur: draft.exchangeRateToEur,
+      exchange_rate_date: draft.exchangeRateDate,
       category: draft.category,
       note: draft.note,
     })

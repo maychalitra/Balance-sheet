@@ -255,6 +255,14 @@ fieldset.field { padding: 0; border: 0; margin: 0; }
 .type-choice input:checked + label { border-color: var(--ink); color: #fff; background: var(--ink); }
 .type-choice input:disabled + label { cursor: not-allowed; opacity: .55; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+.money-field-row { grid-template-columns: 1.05fr 1.35fr 1fr; }
+.conversion-preview { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: center; min-height: 62px; padding: 11px 13px; border: 1px solid #c9dbd1; border-radius: 14px; color: #38574b; background: #f1f7f3; }
+.conversion-preview.error { border-color: #edb6ac; color: #842f24; background: var(--red-soft); }
+.conversion-preview.loading { border-color: #d8c575; color: #655426; background: #fff8dd; }
+.conversion-preview strong, .conversion-preview span { display: block; }
+.conversion-preview strong { font-size: .84rem; }
+.conversion-preview span { color: inherit; font-size: .79rem; }
+.conversion-icon { display: grid !important; place-items: center; width: 37px; height: 37px; border-radius: 12px; background: #fff; font-size: 1.15rem !important; font-weight: 900; }
 .counter-row { display: flex; justify-content: space-between; gap: 8px; }
 .char-count { font-size: .78rem; font-variant-numeric: tabular-nums; }
 .split-preview { padding: 14px; border-radius: 15px; background: #f1f7f3; }
@@ -335,9 +343,12 @@ fieldset.field { padding: 0; border: 0; margin: 0; }
 .transaction-main strong, .transaction-main span { display: block; }
 .transaction-main span, .transaction-note { color: var(--ink-soft); font-size: .82rem; }
 .transaction-note { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.transaction-amount { text-align: right; font-size: 1rem; font-weight: 900; }
-.transaction.income .transaction-amount { color: var(--green); }
-.transaction.expense .transaction-amount { color: var(--red); }
+.transaction-amount { min-width: 145px; text-align: right; }
+.transaction-amount strong, .transaction-amount span { display: block; }
+.transaction-amount strong { font-size: 1rem; font-weight: 900; }
+.transaction-amount span { margin-top: 1px; color: var(--ink-soft); font-size: .7rem; font-weight: 750; white-space: normal; }
+.transaction.income .transaction-amount strong { color: var(--green); }
+.transaction.expense .transaction-amount strong { color: var(--red); }
 .transaction-actions { display: flex; gap: 6px; }
 .lower-grid .transaction { grid-template-columns: auto minmax(0, 1fr) auto; }
 .lower-grid .transaction-note { grid-column: 2; grid-row: 2; white-space: normal; }

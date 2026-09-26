@@ -5,6 +5,7 @@ import {
   BACKGROUND_THEME_OPTIONS,
   BUCKET_DETAILS,
   CATEGORY_OPTIONS,
+  CURRENCY_OPTIONS,
   MAX_AMOUNT_CENTS,
   MAX_BACKUP_BYTES,
   MAX_WISH_LENGTH,
@@ -12,7 +13,7 @@ import {
   RECOMMENDED_ALLOCATION,
   STORAGE_KEY,
 } from './constants'
-import { ALLOCATION_KEYS, type Allocation, type AllocationKey, type BackgroundTheme, type BucketWishes, type MoneyMap, type Transaction, type TransactionDraft, type TransactionType } from './types'
+import { ALLOCATION_KEYS, type Allocation, type AllocationKey, type BackgroundTheme, type BucketWishes, type MoneyMap, type SupportedCurrency, type Transaction, type TransactionDraft, type TransactionType } from './types'
 import { createBackup, validateBackup } from './lib/backup'
 import {
   createTransaction,
@@ -26,6 +27,7 @@ import {
   updateSettings,
   updateTransaction,
 } from './lib/data-service'
+import { convertToEurCents, ExchangeRateError, getHistoricalRateToEur } from './lib/exchange-rates'
 import {
   allocationTotal,
   buildMonthStory,
@@ -33,6 +35,7 @@ import {
   centsToInput,
   dateToISO,
   formatCompactMoney,
+  formatCurrencyAmount,
   formatDate,
   formatMoney,
   isValidISODate,
@@ -45,6 +48,11 @@ import {
 import { configurationIssue, getSupabaseClient, supabase } from './lib/supabase'
 
 type ToastState = { message: string; error?: boolean } | null
+type ConversionPreview =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'ready'; amountCents: number; rateToEur: number; rateDate: string }
+  | { status: 'error'; message: string }
 
 function isConnectionError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error)
@@ -367,6 +375,7 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
   const [editingId, setEditingId] = useState<string | null>(null)
   const [type, setType] = useState<TransactionType>('income')
   const [date, setDate] = useState(todayISO())
+  const [currency, setCurrency] = useState<SupportedCurrency>('EUR')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('')
   const [note, setNote] = useState('')
@@ -377,12 +386,16 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
   const [toast, setToast] = useState<ToastState>(null)
+  const [conversionPreview, setConversionPreview] = useState<ConversionPreview>({ status: 'idle' })
   const fileInput = useRef<HTMLInputElement>(null)
 
   const totals = useMemo(() => calculateTotals(moneyMap.transactions), [moneyMap.transactions])
   const allocationSplit = useMemo(() => splitCents(totals.incomeCents, moneyMap.allocation), [totals.incomeCents, moneyMap.allocation])
   const parsedAmount = parseEurosToCents(amount)
-  const previewSplit = type === 'income' && parsedAmount && parsedAmount > 0 ? splitCents(parsedAmount, moneyMap.allocation) : null
+  const convertedPreviewCents = conversionPreview.status === 'ready' ? conversionPreview.amountCents : null
+  const previewSplit = type === 'income' && convertedPreviewCents && convertedPreviewCents > 0
+    ? splitCents(convertedPreviewCents, moneyMap.allocation)
+    : null
   const writeDisabled = Boolean(busy || connectionIssue)
 
   useEffect(() => {
@@ -400,6 +413,48 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
     return () => window.clearTimeout(timeout)
   }, [toast])
 
+  useEffect(() => {
+    const originalAmountCents = parseEurosToCents(amount)
+    if (
+      originalAmountCents === null
+      || originalAmountCents <= 0
+      || originalAmountCents > MAX_AMOUNT_CENTS
+      || !isValidISODate(date)
+      || date > todayISO()
+    ) {
+      setConversionPreview({ status: 'idle' })
+      return
+    }
+    if (currency === 'EUR') {
+      setConversionPreview({ status: 'ready', amountCents: originalAmountCents, rateToEur: 1, rateDate: date })
+      return
+    }
+
+    let active = true
+    setConversionPreview({ status: 'loading' })
+    const timeout = window.setTimeout(() => {
+      void getHistoricalRateToEur(date, currency)
+        .then(({ rateToEur, rateDate }) => {
+          if (!active) return
+          const amountCents = convertToEurCents(originalAmountCents, rateToEur)
+          if (amountCents < 1) {
+            setConversionPreview({ status: 'error', message: 'That amount converts to less than €0.01.' })
+          } else if (amountCents > MAX_AMOUNT_CENTS) {
+            setConversionPreview({ status: 'error', message: 'That amount is above the EUR balance limit.' })
+          } else {
+            setConversionPreview({ status: 'ready', amountCents, rateToEur, rateDate })
+          }
+        })
+        .catch((error) => {
+          if (active) setConversionPreview({ status: 'error', message: errorMessage(error, 'The exchange rate could not be loaded.') })
+        })
+    }, 350)
+    return () => {
+      active = false
+      window.clearTimeout(timeout)
+    }
+  }, [amount, currency, date])
+
   function notify(message: string, error = false) {
     setToast({ message, error })
   }
@@ -414,6 +469,7 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
     setEditingId(null)
     setType('income')
     setDate(todayISO())
+    setCurrency('EUR')
     setAmount('')
     setCategory('')
     setNote('')
@@ -424,15 +480,15 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
     window.setTimeout(() => document.getElementById(id)?.focus(), 0)
   }
 
-  function validateDraft(): TransactionDraft | null {
+  function validateForm(): { originalAmountCents: number } | null {
     if (!isValidISODate(date) || date > todayISO()) {
       setFormError('Choose a real date that is not in the future.')
       focusField('date-input')
       return null
     }
-    const amountCents = parseEurosToCents(amount)
-    if (amountCents === null || amountCents <= 0 || amountCents > MAX_AMOUNT_CENTS) {
-      setFormError('Enter an amount from €0.01 to €1,000,000,000.00 with no more than two decimal places.')
+    const originalAmountCents = parseEurosToCents(amount)
+    if (originalAmountCents === null || originalAmountCents <= 0 || originalAmountCents > MAX_AMOUNT_CENTS) {
+      setFormError(`Enter an amount from 0.01 to 1,000,000,000.00 ${currency} with no more than two decimal places.`)
       focusField('amount-input')
       return null
     }
@@ -447,16 +503,34 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
       return null
     }
     setFormError('')
-    return { date, type, amountCents, category, note: note.trim() }
+    return { originalAmountCents }
   }
 
   async function submitTransaction(event: FormEvent) {
     event.preventDefault()
     if (writeDisabled) return
-    const draft = validateDraft()
-    if (!draft) return
+    const validated = validateForm()
+    if (!validated) return
     setBusy('transaction')
     try {
+      const { rateToEur, rateDate } = await getHistoricalRateToEur(date, currency)
+      const amountCents = convertToEurCents(validated.originalAmountCents, rateToEur)
+      if (amountCents < 1 || amountCents > MAX_AMOUNT_CENTS) {
+        setFormError(amountCents < 1 ? 'That amount converts to less than €0.01.' : 'That amount is above the EUR balance limit.')
+        focusField('amount-input')
+        return
+      }
+      const draft: TransactionDraft = {
+        date,
+        type,
+        amountCents,
+        originalCurrency: currency,
+        originalAmountCents: validated.originalAmountCents,
+        exchangeRateToEur: rateToEur,
+        exchangeRateDate: rateDate,
+        category,
+        note: note.trim(),
+      }
       if (editingId) {
         const updated = await updateTransaction(userId, editingId, draft)
         setMoneyMap({ ...moneyMap, transactions: moneyMap.transactions.map((item) => item.id === updated.id ? updated : item) })
@@ -468,7 +542,11 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
       }
       resetForm()
     } catch (error) {
-      markFailure(error, 'The money move could not be saved.')
+      if (error instanceof ExchangeRateError) {
+        setFormError(error.message)
+      } else {
+        markFailure(error, 'The money move could not be saved.')
+      }
     } finally {
       setBusy(null)
     }
@@ -478,7 +556,8 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
     setEditingId(transaction.id)
     setType(transaction.type)
     setDate(transaction.date)
-    setAmount(centsToInput(transaction.amountCents))
+    setCurrency(transaction.originalCurrency)
+    setAmount(centsToInput(transaction.originalAmountCents))
     setCategory(transaction.category)
     setNote(transaction.note)
     setFormError('')
@@ -750,9 +829,21 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
                     ))}
                   </div>
                 </fieldset>
-                <div className="field-row">
+                <div className="field-row money-field-row">
                   <div className="field"><label htmlFor="date-input">Date</label><input className="input" type="date" id="date-input" max={todayISO()} value={date} onChange={(event) => setDate(event.target.value)} disabled={writeDisabled} required /></div>
-                  <div className="field"><label htmlFor="amount-input">Amount in EUR</label><input className="input" type="text" id="amount-input" inputMode="decimal" placeholder="0.00" value={amount} onChange={(event) => setAmount(event.target.value)} disabled={writeDisabled} required /></div>
+                  <div className="field"><label htmlFor="currency-input">Currency actually used</label><select className="select" id="currency-input" value={currency} onChange={(event) => setCurrency(event.target.value as SupportedCurrency)} disabled={writeDisabled}>{CURRENCY_OPTIONS.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></div>
+                  <div className="field"><label htmlFor="amount-input">Amount in {currency}</label><input className="input" type="text" id="amount-input" inputMode="decimal" placeholder="0.00" value={amount} onChange={(event) => setAmount(event.target.value)} disabled={writeDisabled} required /></div>
+                </div>
+                <div className={`conversion-preview ${conversionPreview.status}`} role="status" aria-live="polite">
+                  <span className="conversion-icon" aria-hidden="true">⇄</span>
+                  <div>
+                    <strong>EUR balance value</strong>
+                    {conversionPreview.status === 'idle' && <span>Enter an amount to see what will count in the EUR balance.</span>}
+                    {conversionPreview.status === 'loading' && <span>Finding the rate for {formatDate(date)}…</span>}
+                    {conversionPreview.status === 'error' && <span>{conversionPreview.message}</span>}
+                    {conversionPreview.status === 'ready' && currency === 'EUR' && <span>{formatMoney(conversionPreview.amountCents)} — no conversion needed.</span>}
+                    {conversionPreview.status === 'ready' && currency !== 'EUR' && <span>{formatCurrencyAmount(parsedAmount ?? 0, currency)} ≈ <b>{formatMoney(conversionPreview.amountCents)}</b> using the rate from {formatDate(conversionPreview.rateDate)}.</span>}
+                  </div>
                 </div>
                 <div className="field">
                   <label htmlFor="category-input">{type === 'income' ? 'Where did it come from?' : 'What was it for?'}</label>
@@ -775,7 +866,7 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
                 )}
                 {formError && <div className="form-error" role="alert">{formError}</div>}
                 <div className="form-actions">
-                  <button className="button button-primary" type="submit" disabled={writeDisabled}>{busy === 'transaction' ? 'Saving…' : editingId ? 'Save changes' : 'Add money move'}</button>
+                  <button className="button button-primary" type="submit" disabled={writeDisabled}>{busy === 'transaction' ? (currency === 'EUR' ? 'Saving…' : 'Converting & saving…') : editingId ? 'Save changes' : 'Add money move'}</button>
                   {editingId && <button className="button" type="button" onClick={resetForm} disabled={Boolean(busy)}>Cancel</button>}
                 </div>
               </form>
@@ -874,7 +965,12 @@ function TransactionList({ transactions, filter, edit, remove, disabled }: { tra
           <div className="transaction-badge" aria-hidden="true">{transaction.type === 'income' ? '↗' : '↘'}</div>
           <div className="transaction-main"><strong>{transaction.category}</strong><span>{formatDate(transaction.date)}</span></div>
           <div className="transaction-note">{transaction.note || 'No note added'}</div>
-          <div className="transaction-amount">{transaction.type === 'income' ? '+' : '−'}{formatMoney(transaction.amountCents)}</div>
+          <div className="transaction-amount">
+            <strong>{transaction.type === 'income' ? '+' : '−'}{formatMoney(transaction.amountCents)}</strong>
+            {transaction.originalCurrency !== 'EUR' && (
+              <span>{formatCurrencyAmount(transaction.originalAmountCents, transaction.originalCurrency)} · rate {formatDate(transaction.exchangeRateDate)}</span>
+            )}
+          </div>
           <div className="transaction-actions">
             <button className="button button-small" type="button" onClick={() => edit(transaction)} disabled={disabled} aria-label={`Edit ${transaction.category} ${formatMoney(transaction.amountCents)}`}>Edit</button>
             <button className="button button-small button-danger" type="button" onClick={() => remove(transaction)} disabled={disabled} aria-label={`Delete ${transaction.category} ${formatMoney(transaction.amountCents)}`}>Delete</button>
@@ -976,7 +1072,11 @@ function MonthlyStory({ transactions, storyMonth, setStoryMonth }: { transaction
               {!week.transactions.length ? <p className="week-empty">No money moves this week.</p> : week.transactions.map((transaction) => (
                 <div className={`week-line ${transaction.type}`} key={transaction.id}>
                   <span className="week-line-date">{formatDate(transaction.date)}</span>
-                  <span className="week-line-main"><strong>{transaction.category}</strong>{transaction.note && <span>{transaction.note}</span>}</span>
+                  <span className="week-line-main">
+                    <strong>{transaction.category}</strong>
+                    {transaction.note && <span>{transaction.note}</span>}
+                    {transaction.originalCurrency !== 'EUR' && <span>{formatCurrencyAmount(transaction.originalAmountCents, transaction.originalCurrency)} · converted to EUR</span>}
+                  </span>
                   <span className="week-line-amount">{transaction.type === 'income' ? '+' : '−'}{formatMoney(transaction.amountCents)}</span>
                 </div>
               ))}

@@ -9,6 +9,10 @@ function transaction(overrides: Partial<Transaction> = {}): Transaction {
     date: '2026-01-05',
     type: 'income',
     amountCents: 1000,
+    originalCurrency: 'EUR',
+    originalAmountCents: 1000,
+    exchangeRateToEur: 1,
+    exchangeRateDate: '2026-01-05',
     category: 'Allowance',
     note: '',
     createdAt: '2026-01-05T12:00:00.000Z',
@@ -48,6 +52,18 @@ describe('totals and smart notes', () => {
       transaction({ id: 'move-2', type: 'expense', category: 'Fun', amountCents: 275 }),
     ]
     expect(calculateTotals(transactions)).toEqual({ incomeCents: 1000, expenseCents: 275, balanceCents: 725 })
+  })
+
+  it('uses the converted EUR cents rather than the original foreign amount', () => {
+    const thaiBahtExpense = transaction({
+      type: 'expense',
+      category: 'Food & Drink',
+      amountCents: 263,
+      originalCurrency: 'THB',
+      originalAmountCents: 10_000,
+      exchangeRateToEur: 0.02626,
+    })
+    expect(calculateTotals([thaiBahtExpense])).toEqual({ incomeCents: 0, expenseCents: 263, balanceCents: -263 })
   })
 
   it('prioritizes the overspending warning', () => {

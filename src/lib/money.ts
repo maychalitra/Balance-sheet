@@ -1,4 +1,4 @@
-import { ALLOCATION_KEYS, type Allocation, type MonthStory, type Totals, type Transaction } from '../types'
+import { ALLOCATION_KEYS, type Allocation, type MonthStory, type SupportedCurrency, type Totals, type Transaction } from '../types'
 
 const euroFormatter = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' })
 const dateFormatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -38,6 +38,16 @@ export function centsToInput(cents: number): string {
 
 export function formatMoney(cents: number): string {
   return euroFormatter.format(cents / 100)
+}
+
+export function formatCurrencyAmount(cents: number, currency: SupportedCurrency): string {
+  return new Intl.NumberFormat('en-IE', {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100)
 }
 
 export function formatCompactMoney(cents: number): string {

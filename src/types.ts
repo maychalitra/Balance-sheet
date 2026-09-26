@@ -1,8 +1,14 @@
 export const ALLOCATION_KEYS = ['investment', 'goal', 'planned', 'fun', 'giving'] as const
 export const BACKGROUND_THEMES = ['mint', 'sky', 'sunny', 'peach', 'lilac'] as const
+export const SUPPORTED_CURRENCIES = [
+  'EUR', 'USD', 'GBP', 'THB', 'CHF', 'JPY', 'CAD', 'AUD', 'CNY', 'HKD',
+  'SGD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'RON', 'TRY', 'INR',
+  'KRW', 'NZD',
+] as const
 
 export type AllocationKey = (typeof ALLOCATION_KEYS)[number]
 export type BackgroundTheme = (typeof BACKGROUND_THEMES)[number]
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number]
 export type TransactionType = 'income' | 'expense'
 
 export interface Allocation {
@@ -25,6 +31,10 @@ export interface Transaction {
   date: string
   type: TransactionType
   amountCents: number
+  originalCurrency: SupportedCurrency
+  originalAmountCents: number
+  exchangeRateToEur: number
+  exchangeRateDate: string
   category: string
   note: string
   createdAt: string
@@ -45,6 +55,10 @@ export interface TransactionDraft {
   date: string
   type: TransactionType
   amountCents: number
+  originalCurrency: SupportedCurrency
+  originalAmountCents: number
+  exchangeRateToEur: number
+  exchangeRateDate: string
   category: string
   note: string
   createdAt?: string

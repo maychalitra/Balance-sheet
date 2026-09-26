@@ -4,7 +4,7 @@ HANZO'S MONEY MAP — PRODUCT SPECIFICATION
 
 Hanzo's Money Map is a cheerful, private income and expense tracker for Hanzo, the owner's 11-year-old son. It helps Hanzo record money coming in and going out, understand his balance, and give each euro a simple job. Language is encouraging and child-friendly without hiding the real ideas of income, expenses, saving, investing, goals, and generosity.
 
-The application is a Vite, React, and TypeScript single-page app. Supabase is the only persistent store for financial records and plan settings. The app requires an internet connection for initial loading and all writes. Currency is fixed to EUR.
+The application is a Vite, React, and TypeScript single-page app. Supabase is the only persistent store for financial records and plan settings. The app requires an internet connection for initial loading and all writes. Hanzo can record the currency actually used for a transaction; the authoritative balance and every derived view remain in EUR.
 
 The visual direction remains a warm notebook-inspired working dashboard with cream paper, dark green text, yellow highlights, rounded cards, clear grouping, and distinct colors for the five money jobs.
 
@@ -45,7 +45,7 @@ The allocation is guidance calculated from total income and does not represent s
 
 Hanzo can save one optional wish of up to 80 characters for each money job. Wishes are family-account settings, do not change financial calculations, and are written to Supabase before the saved UI state changes.
 
-When a valid income is entered, the form previews its exact split. All monetary calculations use integer euro cents. Rounding remainders are distributed deterministically so displayed parts always add to the original amount.
+When a valid income is entered, the form previews its exact EUR split. All monetary calculations use integer euro cents. Rounding remainders are distributed deterministically so displayed parts always add to the converted EUR amount.
 
 The goal name is optional and limited to 60 characters. The optional target is from EUR 0.00 through EUR 1,000,000,000.00 with at most two decimals. Progress equals cumulative Big Goal allocation divided by the target and is visually capped at 100%.
 
@@ -57,7 +57,11 @@ Each transaction contains:
 - user_id: the authenticated family owner.
 - date: a real ISO date in YYYY-MM-DD form, not later than today.
 - type: income or expense.
-- amount: positive integer euro cents, at most 100,000,000,000 cents.
+- amount: positive integer converted EUR cents, at most 100,000,000,000 cents.
+- originalCurrency: the supported ISO currency Hanzo actually used.
+- originalAmountCents: the entered amount in hundredths of the selected currency.
+- exchangeRateToEur: the historical reference rate, expressed as EUR per one unit of the original currency and stored to ten decimal places.
+- exchangeRateDate: the observation date returned by the reference-rate service, never later than the transaction date.
 - category: one category recognized for the selected type.
 - note: optional plain text, at most 120 characters.
 - createdAt and updatedAt: cloud timestamps.
@@ -66,7 +70,9 @@ Income categories: Allowance, Chore, Gift, Sale, Other.
 
 Expense categories: Food & Drink, School, Transport, Planned Purchase, Fun, Giving, Goal Purchase, Other.
 
-The child can add, edit, and delete transactions. Editing keeps the original ID and creation time. Deleting requires confirmation. The history sorts by date newest-first and then creation time, and it can be filtered to all moves, income, or expenses.
+The child can add, edit, and delete transactions. The form defaults to EUR and also offers common international currencies, including THB, USD, and GBP. For a foreign currency, it previews the historical EUR conversion for the transaction date before saving. Editing restores the original currency and entered amount while keeping the original ID and creation time. Deleting requires confirmation. The history sorts by date newest-first and then creation time, and it can be filtered to all moves, income, or expenses. Foreign-currency rows show both the main EUR value and the original amount.
+
+Historical rates come from Frankfurter's no-key v2 API. They are daily reference rates, not the exact bank, card, cash-exchange, bid, or ask rate. If a rate cannot be loaded, the foreign-currency move is not saved and the form input remains available for retry. EUR moves do not require a rate request.
 
 Writes are remote-write-first: the UI reflects a mutation only after Supabase confirms it. Buttons prevent duplicate submissions while a request is pending. Concurrent edits use last successful write wins.
 
@@ -87,7 +93,7 @@ Smart notes cover no entries, spending above income, goal completion, Fun spendi
 
 money_map_settings contains one row per auth user with currency, five allocation percentages, goal name, target cents, a background theme, five optional wish lines, and updated timestamp. Database checks enforce EUR, percentage ranges and total, goal length, target range, a supported background theme, and an 80-character limit for each wish.
 
-transactions uses a composite user_id/id primary key. Database checks and a trigger enforce ID length, non-future date, type, amount range, type-specific category, note length, and timestamps. An index covers owner, date descending, and creation time descending.
+transactions uses a composite user_id/id primary key. It stores converted EUR cents together with the original currency, original amount, rate, and rate observation date. Database checks and triggers enforce ID length, non-future date, type, amount ranges, supported currencies, a positive rate, mathematical agreement between the original amount and EUR amount, type-specific category, note length, and timestamps. An index covers owner, date descending, and creation time descending.
 
 Both tables enable RLS with explicit select, insert, update, and delete policies for authenticated owners. Grants are revoked from anonymous users.
 
@@ -106,7 +112,7 @@ The authenticated reset_money_map RPC atomically deletes the owner's transaction
 
 9. BACKUP, RESTORE, AND CLEAR
 
-Backup export downloads readable version 1 JSON named hanzo-money-map-backup-YYYY-MM-DD.json. The JSON retains the established EUR-decimal backup contract even though runtime and database calculations use cents.
+Backup export downloads readable version 1 JSON named hanzo-money-map-backup-YYYY-MM-DD.json. The JSON retains the established EUR-decimal backup contract even though runtime and database calculations use cents. A foreign-currency transaction is exported at its converted EUR value, so a restored version 1 transaction becomes an EUR-only record without changing the saved balance.
 
 Restore accepts JSON files no larger than 1 MB and no more than 10,000 transactions. The complete file is validated in the browser for version, currency, allocation, goal, unique IDs, dates, types, amounts, categories, notes, and timestamps. Confirmation is required. The PostgreSQL RPC repeats authoritative validation and replaces data inside one transaction so invalid input or any failure leaves existing cloud data untouched.
 
@@ -134,6 +140,7 @@ Clear everything requires confirmation and calls the atomic reset RPC. It restor
 - Failed cloud operations preserve input and do not display unsaved changes as committed.
 - Refresh loads changes made on another device. Changes are not pushed live.
 - Awkward-cent allocation splits always add to the exact source income.
+- A foreign-currency amount is converted with the historical rate for its transaction date, the original amount remains visible and editable, and every total continues to use only converted EUR cents.
 - Monthly calculations work across week, month, and year boundaries.
 - Backups round-trip through export and atomic restore; malformed data cannot replace current data.
 - No financial data is written to browser persistence; the retired storage key is removed.

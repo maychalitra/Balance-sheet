@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(9);
+select plan(10);
 
 -- Fixed owners are sufficient for policy tests. Foreign-key triggers are disabled only
 -- while arranging rows inside this rolled-back test transaction.
@@ -10,10 +10,13 @@ set local session_replication_role = replica;
 insert into public.money_map_settings (user_id) values
   ('11111111-1111-4111-8111-111111111111'),
   ('22222222-2222-4222-8222-222222222222');
-insert into public.transactions (user_id, id, transaction_date, type, amount_cents, category)
+insert into public.transactions (
+  user_id, id, transaction_date, type, amount_cents, category,
+  original_currency, original_amount_cents, exchange_rate_to_eur, exchange_rate_date
+)
 values
-  ('11111111-1111-4111-8111-111111111111', 'owner-a-move', current_date, 'income', 1000, 'Allowance'),
-  ('22222222-2222-4222-8222-222222222222', 'owner-b-move', current_date, 'income', 2000, 'Gift');
+  ('11111111-1111-4111-8111-111111111111', 'owner-a-move', current_date, 'income', 1000, 'Allowance', 'EUR', 1000, 1, current_date),
+  ('22222222-2222-4222-8222-222222222222', 'owner-b-move', current_date, 'income', 2000, 'Gift', 'EUR', 2000, 1, current_date);
 set local session_replication_role = origin;
 
 set local role authenticated;
@@ -44,6 +47,19 @@ select results_eq(
     ) select count(*)::bigint from changed$$,
   array[0::bigint],
   'another owner''s rows cannot be updated'
+);
+
+select throws_ok(
+  $$insert into public.transactions (
+      user_id, id, transaction_date, type, amount_cents, category,
+      original_currency, original_amount_cents, exchange_rate_to_eur, exchange_rate_date
+    ) values (
+      '11111111-1111-4111-8111-111111111111', 'bad-conversion', current_date, 'expense', 101, 'Fun',
+      'USD', 100, 0.5, current_date
+    )$$,
+  '23514',
+  null,
+  'a converted EUR amount must match the stored original amount and rate'
 );
 
 select throws_ok(

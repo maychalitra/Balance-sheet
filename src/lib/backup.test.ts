@@ -64,6 +64,10 @@ describe('backup export', () => {
         date: '2026-01-05',
         type: 'income',
         amountCents: 1000,
+        originalCurrency: 'USD',
+        originalAmountCents: 1200,
+        exchangeRateToEur: 0.8333333333,
+        exchangeRateDate: '2026-01-05',
         category: 'Allowance',
         note: 'January',
         createdAt: '2026-01-05T12:00:00.000Z',
@@ -74,6 +78,7 @@ describe('backup export', () => {
     expect(exported.goal.targetAmount).toBe(250)
     expect(exported.transactions[0].amount).toBe(10)
     expect(exported.transactions[0].createdAt).toBe(1767614400000)
+    expect(exported.transactions[0]).not.toHaveProperty('originalCurrency')
     expect(exported).not.toHaveProperty('wishes')
   })
 })
