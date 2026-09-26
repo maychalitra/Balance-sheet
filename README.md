@@ -7,7 +7,7 @@ Hanzo's Money Map is a private, family-owned income and expense tracker for an 1
 - Email/password sign-in for one pre-created family account
 - Supabase-only storage protected by Row Level Security
 - Income and expense entry, editing, deletion, filtering, and exact-cent calculations
-- Five-job income plan, goal tracking, smart notes, and monthly weekly-balance story
+- Five-job income plan with saved wish lines, goal tracking, smart notes, and monthly weekly-balance story
 - A child-friendly background picker saved to the family account
 - Version 1 JSON backup export and atomic restore
 - Manual cloud refresh, password recovery, connection-error handling, and destructive-action confirmations
@@ -17,7 +17,7 @@ The app does not offer public registration and does not store financial records 
 ## 1. Create and configure Supabase
 
 1. Create a Supabase project in the nearest available EU region. Keep the database password in a password manager.
-2. Open the project's SQL Editor and run every file in `supabase/migrations` in filename order. The first migration creates the secure money-map schema and RPCs; the second adds the saved background theme.
+2. Open the project's SQL Editor and run every file in `supabase/migrations` in filename order. The first migration creates the secure money-map schema and RPCs; later migrations add the saved background theme and five-job wishes.
 3. In **Authentication → Providers → Email**, keep email/password enabled and disable new-user sign-up.
 4. In **Authentication → Users**, create and confirm one family user with the adult's email and a strong password.
 5. In **Authentication → URL Configuration**, set the local Site URL and allowed redirect URL to `http://localhost:5173`. Add the deployed HTTPS URL later if the app is published.
@@ -64,4 +64,5 @@ The production build is written to `dist/`. The project is intentionally local-o
 - The former `kidMoneyTracker.v1` browser record is removed at startup and is not imported.
 - When the cloud is unavailable, already loaded information remains visible only in memory and writes are paused until refresh succeeds.
 - Backups remain readable version 1 JSON. Restore validates the complete file in the browser and again in PostgreSQL before replacing data in one transaction.
+- Version 1 backups contain the money plan and transactions. The background theme and wish lines stay with the cloud account and are not replaced during restore.
 - Other open devices update after reload or the **Refresh** button; Realtime is intentionally disabled.

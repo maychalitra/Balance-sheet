@@ -1,6 +1,6 @@
 import type { PostgrestError } from '@supabase/supabase-js'
-import { DEFAULT_BACKGROUND_THEME, RECOMMENDED_ALLOCATION } from '../constants'
-import { BACKGROUND_THEMES, type Allocation, type BackgroundTheme, type MoneyMap, type Transaction, type TransactionDraft } from '../types'
+import { DEFAULT_BACKGROUND_THEME, DEFAULT_BUCKET_WISHES, MAX_WISH_LENGTH, RECOMMENDED_ALLOCATION } from '../constants'
+import { BACKGROUND_THEMES, type Allocation, type AllocationKey, type BackgroundTheme, type MoneyMap, type Transaction, type TransactionDraft } from '../types'
 import type { BackupV1 } from './backup'
 import { getSupabaseClient } from './supabase'
 
@@ -15,6 +15,11 @@ interface SettingsRow {
   goal_name: string
   goal_target_cents: number
   background_theme?: string
+  investment_wish?: string
+  goal_wish?: string
+  planned_wish?: string
+  fun_wish?: string
+  giving_wish?: string
   updated_at: string
 }
 
@@ -89,6 +94,13 @@ export async function loadMoneyMap(userId: string): Promise<MoneyMap> {
     goal: {
       name: settings.goal_name,
       targetCents: Number(settings.goal_target_cents),
+    },
+    wishes: {
+      investment: settings.investment_wish ?? '',
+      goal: settings.goal_wish ?? '',
+      planned: settings.planned_wish ?? '',
+      fun: settings.fun_wish ?? '',
+      giving: settings.giving_wish ?? '',
     },
     updatedAt: settings.updated_at,
     transactions: ((transactionResult.data ?? []) as TransactionRow[]).map(mapTransaction),
@@ -176,6 +188,26 @@ export async function updateBackgroundTheme(userId: string, backgroundTheme: Bac
   return loadMoneyMap(userId)
 }
 
+const WISH_COLUMNS: Record<AllocationKey, string> = {
+  investment: 'investment_wish',
+  goal: 'goal_wish',
+  planned: 'planned_wish',
+  fun: 'fun_wish',
+  giving: 'giving_wish',
+}
+
+export async function updateBucketWish(userId: string, key: AllocationKey, wish: string): Promise<MoneyMap> {
+  const cleanWish = wish.trim()
+  if (cleanWish.length > MAX_WISH_LENGTH) throw new Error(`Keep each wish to ${MAX_WISH_LENGTH} characters or fewer.`)
+  const client = getSupabaseClient()
+  const { error } = await client
+    .from('money_map_settings')
+    .update({ [WISH_COLUMNS[key]]: cleanWish })
+    .eq('user_id', userId)
+  dataError(error, 'The wish could not be saved.')
+  return loadMoneyMap(userId)
+}
+
 export async function restoreBackup(userId: string, backup: BackupV1): Promise<MoneyMap> {
   const client = getSupabaseClient()
   const { error } = await client.rpc('replace_money_map', { payload: backup })
@@ -195,6 +227,7 @@ export function defaultMoneyMap(): MoneyMap {
     allocation: { ...RECOMMENDED_ALLOCATION },
     backgroundTheme: DEFAULT_BACKGROUND_THEME,
     goal: { name: '', targetCents: 0 },
+    wishes: { ...DEFAULT_BUCKET_WISHES },
     transactions: [],
     updatedAt: new Date(0).toISOString(),
   }

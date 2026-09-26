@@ -158,7 +158,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .tip-kicker { margin-bottom: 2px !important; font-size: .76rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
 .tip-text { color: #584c2d; font-weight: 700; }
 
-.workspace-grid { display: grid; grid-template-columns: minmax(260px, 310px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.workspace-grid { display: grid; grid-template-columns: minmax(340px, 390px) minmax(0, 1fr); gap: 18px; align-items: start; }
 .reminder-rail { position: sticky; top: 18px; display: grid; gap: 12px; }
 .panel { border: 1px solid rgba(23, 53, 47, .12); border-radius: var(--radius-xl); background: rgba(255, 253, 247, .95); box-shadow: var(--shadow); }
 .panel-pad { padding: clamp(19px, 3vw, 28px); }
@@ -171,6 +171,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .bucket-list { display: grid; gap: 11px; }
 .bucket { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 13px; align-items: center; min-height: 82px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
 .bucket-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 15px; font-size: 24px; }
+.bucket-copy { min-width: 0; }
 .bucket-name { margin: 0; font-weight: 900; }
 .bucket-desc { margin: 2px 0 0; color: var(--ink-soft); font-size: .83rem; }
 .bucket-value { text-align: right; }
@@ -182,19 +183,28 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .bucket-fun .bucket-icon { background: var(--coral-soft); }
 .bucket-give .bucket-icon { background: var(--rose-soft); }
 
-.plan-reminder { padding: 16px; border-radius: 20px; }
+.plan-reminder { padding: 18px; border-radius: 22px; }
 .plan-reminder .section-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-bottom: 12px; }
-.plan-reminder .section-head h2 { font-size: 1.05rem; }
+.plan-reminder .section-head h2 { font-size: 1.15rem; }
 .plan-reminder .section-head p { margin-top: 2px; font-size: .78rem; line-height: 1.35; }
 .plan-reminder .total-pill { padding: 5px 7px; font-size: .72rem; }
-.plan-reminder .bucket-list { gap: 7px; }
-.plan-reminder .bucket { grid-template-columns: auto minmax(0, 1fr) auto; gap: 9px; min-height: 0; padding: 8px 9px; border-radius: 12px; }
-.plan-reminder .bucket-icon { width: 34px; height: 34px; border-radius: 10px; font-size: 18px; }
-.plan-reminder .bucket-name { font-size: .84rem; line-height: 1.2; }
+.plan-reminder .bucket-list { gap: 9px; }
+.plan-reminder .bucket { grid-template-columns: auto minmax(0, 1fr) auto; gap: 7px 10px; min-height: 0; padding: 10px 11px; border-radius: 14px; }
+.plan-reminder .bucket-icon { width: 36px; height: 36px; border-radius: 11px; font-size: 19px; }
+.plan-reminder .bucket-name { font-size: .88rem; line-height: 1.2; }
 .plan-reminder .bucket-desc { display: none; }
 .plan-reminder .bucket-value { grid-column: auto; text-align: right; }
 .plan-reminder .bucket-percent { display: block; font-size: .7rem; line-height: 1.15; }
 .plan-reminder .bucket-money { display: block; font-size: .88rem; line-height: 1.25; }
+.plan-reminder .wish-row { grid-column: 2 / -1; display: grid; gap: 4px; }
+.plan-reminder .wish-row label { color: var(--ink-soft); font-size: .72rem; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
+.wish-controls { display: flex; gap: 5px; min-width: 0; }
+.wish-controls input { width: 100%; min-width: 0; min-height: 34px; padding: 6px 8px; border: 1px dashed #a9b9ae; border-radius: 9px; color: var(--ink); background: #fbfdfb; font-size: .78rem; }
+.wish-controls input:focus { border-style: solid; border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(75, 131, 166, .14); }
+.wish-controls input::placeholder { color: #7a8b84; }
+.wish-save { min-height: 34px; padding: 5px 8px; border: 1px solid #b9d9c7; border-radius: 9px; color: #245b46; background: var(--green-soft); font-size: .75rem; font-weight: 900; cursor: pointer; }
+.wish-save:hover:not(:disabled) { border-color: var(--green); }
+.wish-save:disabled { cursor: not-allowed; opacity: .48; }
 .plan-reminder .goal-box { margin-top: 10px; padding: 11px; border-radius: 13px; }
 .plan-reminder .goal-top { display: grid; gap: 2px; margin-bottom: 7px; }
 .plan-reminder .goal-top strong { font-size: .85rem; }
@@ -393,7 +403,7 @@ fieldset.field { padding: 0; border: 0; margin: 0; }
 
 @media (max-width: 900px) {
   .workspace-grid { grid-template-columns: 1fr; }
-  .reminder-rail { position: static; width: min(100%, 360px); justify-self: start; }
+  .reminder-rail { position: static; width: min(100%, 430px); justify-self: start; }
   .entry-panel { position: static; }
   .transaction { grid-template-columns: auto 1fr auto; }
   .transaction-note { grid-column: 2 / -1; grid-row: 2; }

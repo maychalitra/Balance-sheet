@@ -24,7 +24,7 @@ After authentication and cloud loading, the first screen shows:
 - Money in: the sum of all income entries.
 - Money out: the sum of all expense entries.
 - A deterministic smart money note based on current data.
-- The five-job money plan and cumulative suggested amount for each job.
+- The five-job money plan, cumulative suggested amount, and an editable saved wish line for each job.
 - Big Goal progress.
 - A form for adding or editing an income or expense.
 - Hanzo's Monthly Money Story with a weekly running-balance chart.
@@ -42,6 +42,8 @@ The recommended allocation is:
 - Giving: 10%. Gifts, helping another person, or supporting a chosen cause.
 
 The allocation is guidance calculated from total income and does not represent separate bank accounts. An adult can edit all percentages. Values must be whole numbers from 0 through 100 and total exactly 100. “Use recommended plan” restores 20/30/30/10/10.
+
+Hanzo can save one optional wish of up to 80 characters for each money job. Wishes are family-account settings, do not change financial calculations, and are written to Supabase before the saved UI state changes.
 
 When a valid income is entered, the form previews its exact split. All monetary calculations use integer euro cents. Rounding remainders are distributed deterministically so displayed parts always add to the original amount.
 
@@ -83,7 +85,7 @@ Smart notes cover no entries, spending above income, goal completion, Fun spendi
 
 7. SUPABASE DATA MODEL
 
-money_map_settings contains one row per auth user with currency, five allocation percentages, goal name, target cents, a background theme, and updated timestamp. Database checks enforce EUR, percentage ranges and total, goal length, target range, and one of the supported background themes.
+money_map_settings contains one row per auth user with currency, five allocation percentages, goal name, target cents, a background theme, five optional wish lines, and updated timestamp. Database checks enforce EUR, percentage ranges and total, goal length, target range, a supported background theme, and an 80-character limit for each wish.
 
 transactions uses a composite user_id/id primary key. Database checks and a trigger enforce ID length, non-future date, type, amount range, type-specific category, note length, and timestamps. An index covers owner, date descending, and creation time descending.
 
@@ -108,7 +110,9 @@ Backup export downloads readable version 1 JSON named hanzo-money-map-backup-YYY
 
 Restore accepts JSON files no larger than 1 MB and no more than 10,000 transactions. The complete file is validated in the browser for version, currency, allocation, goal, unique IDs, dates, types, amounts, categories, notes, and timestamps. Confirmation is required. The PostgreSQL RPC repeats authoritative validation and replaces data inside one transaction so invalid input or any failure leaves existing cloud data untouched.
 
-Clear everything requires confirmation and calls the atomic reset RPC. It restores recommended allocation, an empty goal, and no transactions.
+Version 1 backups intentionally exclude the background theme and five wish lines. Restoring a backup leaves those account preferences unchanged.
+
+Clear everything requires confirmation and calls the atomic reset RPC. It restores recommended allocation, an empty goal, empty wish lines, and no transactions while keeping the chosen background theme.
 
 10. ACCESSIBILITY AND RESPONSIVE BEHAVIOR
 

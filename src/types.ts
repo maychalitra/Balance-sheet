@@ -13,6 +13,8 @@ export interface Allocation {
   giving: number
 }
 
+export type BucketWishes = Record<AllocationKey, string>
+
 export interface Goal {
   name: string
   targetCents: number
@@ -33,6 +35,7 @@ export interface MoneyMap {
   allocation: Allocation
   backgroundTheme: BackgroundTheme
   goal: Goal
+  wishes: BucketWishes
   transactions: Transaction[]
   updatedAt: string
 }

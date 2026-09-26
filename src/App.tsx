@@ -7,11 +7,12 @@ import {
   CATEGORY_OPTIONS,
   MAX_AMOUNT_CENTS,
   MAX_BACKUP_BYTES,
+  MAX_WISH_LENGTH,
   MONTHLY_ALLOWANCE_CENTS,
   RECOMMENDED_ALLOCATION,
   STORAGE_KEY,
 } from './constants'
-import { ALLOCATION_KEYS, type Allocation, type BackgroundTheme, type MoneyMap, type Transaction, type TransactionDraft, type TransactionType } from './types'
+import { ALLOCATION_KEYS, type Allocation, type AllocationKey, type BackgroundTheme, type BucketWishes, type MoneyMap, type Transaction, type TransactionDraft, type TransactionType } from './types'
 import { createBackup, validateBackup } from './lib/backup'
 import {
   createTransaction,
@@ -21,6 +22,7 @@ import {
   resetMoneyMap,
   restoreBackup,
   updateBackgroundTheme,
+  updateBucketWish,
   updateSettings,
   updateTransaction,
 } from './lib/data-service'
@@ -368,6 +370,7 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('')
   const [note, setNote] = useState('')
+  const [wishDrafts, setWishDrafts] = useState<BucketWishes>(() => ({ ...moneyMap.wishes }))
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [connectionIssue, setConnectionIssue] = useState(initialConnectionIssue)
@@ -386,6 +389,10 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
     document.body.dataset.backgroundTheme = moneyMap.backgroundTheme
     return () => { delete document.body.dataset.backgroundTheme }
   }, [moneyMap.backgroundTheme])
+
+  useEffect(() => {
+    setWishDrafts({ ...moneyMap.wishes })
+  }, [moneyMap.wishes])
 
   useEffect(() => {
     if (!toast) return
@@ -595,9 +602,26 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
     }
   }
 
+  async function saveWish(key: AllocationKey) {
+    if (writeDisabled) return
+    const wish = wishDrafts[key].trim()
+    if (wish === moneyMap.wishes[key]) return
+    setBusy(`wish-${key}`)
+    try {
+      const next = await updateBucketWish(userId, key, wish)
+      setMoneyMap(next)
+      setConnectionIssue('')
+      notify(`${ALLOCATION_LABELS[key]} wish saved.`)
+    } catch (error) {
+      markFailure(error, 'The wish could not be saved.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   async function clearEverything() {
     if (writeDisabled) return
-    if (!window.confirm('This will delete every money move and reset the plan. This cannot be undone unless you have a backup. Continue?')) return
+    if (!window.confirm('This will delete every money move and reset the plan and wish lines. This cannot be undone unless you have a backup. Continue?')) return
     setBusy('reset')
     try {
       const next = await resetMoneyMap(userId)
@@ -666,11 +690,33 @@ function Dashboard({ userId, email, moneyMap, setMoneyMap, refresh, signOut, ini
                 <div className="bucket-list">
                   {ALLOCATION_KEYS.map((key) => {
                     const detail = BUCKET_DETAILS[key]
+                    const wishChanged = wishDrafts[key].trim() !== moneyMap.wishes[key]
                     return (
                       <article className={`bucket ${detail.className}`} key={key}>
                         <div className="bucket-icon" aria-hidden="true">{detail.icon}</div>
-                        <div><p className="bucket-name">{detail.name}</p><p className="bucket-desc">{detail.description}</p></div>
+                        <div className="bucket-copy"><p className="bucket-name">{detail.name}</p><p className="bucket-desc">{detail.description}</p></div>
                         <div className="bucket-value"><span className="bucket-percent">{moneyMap.allocation[key]}%</span><span className="bucket-money">{formatMoney(allocationSplit[key])}</span></div>
+                        <div className="wish-row">
+                          <label htmlFor={`wish-${key}`}>My wish</label>
+                          <div className="wish-controls">
+                            <input
+                              id={`wish-${key}`}
+                              type="text"
+                              maxLength={MAX_WISH_LENGTH}
+                              value={wishDrafts[key]}
+                              placeholder={detail.wishPlaceholder}
+                              onChange={(event) => setWishDrafts({ ...wishDrafts, [key]: event.target.value })}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' && wishChanged && !writeDisabled) {
+                                  event.preventDefault()
+                                  void saveWish(key)
+                                }
+                              }}
+                              disabled={Boolean(busy)}
+                            />
+                            <button className="wish-save" type="button" onClick={() => void saveWish(key)} disabled={writeDisabled || !wishChanged}>{busy === `wish-${key}` ? 'Saving…' : 'Save'}</button>
+                          </div>
+                        </div>
                       </article>
                     )
                   })}
@@ -1059,7 +1105,7 @@ function SettingsModal({ moneyMap, saving, onClose, onSave, onClear }: { moneyMa
             <button className="button" type="button" disabled={saving} onClick={() => setAllocation(Object.fromEntries(ALLOCATION_KEYS.map((key) => [key, String(RECOMMENDED_ALLOCATION[key])])) as Record<(typeof ALLOCATION_KEYS)[number], string>)}>Use recommended plan</button>
             <button className="button button-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save plan'}</button>
           </div>
-          <div className="danger-zone"><h3>Start fresh</h3><p>This removes every cloud money move and resets the plan. Download a backup first if you might want it later.</p><button className="button button-danger" type="button" onClick={onClear} disabled={saving}>Clear everything</button></div>
+          <div className="danger-zone"><h3>Start fresh</h3><p>This removes every cloud money move and resets the plan and wish lines. Download a backup first if you might want it later.</p><button className="button button-danger" type="button" onClick={onClear} disabled={saving}>Clear everything</button></div>
         </form>
       </section>
     </div>

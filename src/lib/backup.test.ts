@@ -57,6 +57,7 @@ describe('backup export', () => {
       allocation: validBackup.allocation,
       backgroundTheme: 'mint',
       goal: { name: 'Bicycle', targetCents: 25000 },
+      wishes: { investment: 'Future', goal: 'Bicycle', planned: '', fun: '', giving: '' },
       updatedAt: '2026-01-05T12:00:00.000Z',
       transactions: [{
         id: validBackup.transactions[0].id,
@@ -73,5 +74,6 @@ describe('backup export', () => {
     expect(exported.goal.targetAmount).toBe(250)
     expect(exported.transactions[0].amount).toBe(10)
     expect(exported.transactions[0].createdAt).toBe(1767614400000)
+    expect(exported).not.toHaveProperty('wishes')
   })
 })

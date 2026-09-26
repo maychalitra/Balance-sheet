@@ -1,4 +1,4 @@
-import type { Allocation, AllocationKey, BackgroundTheme, TransactionType } from './types'
+import type { Allocation, AllocationKey, BackgroundTheme, BucketWishes, TransactionType } from './types'
 
 export const STORAGE_KEY = 'kidMoneyTracker.v1'
 export const BACKUP_VERSION = 1
@@ -6,7 +6,16 @@ export const MAX_BACKUP_BYTES = 1024 * 1024
 export const MAX_AMOUNT_CENTS = 100_000_000_000
 export const MAX_TRANSACTIONS = 10_000
 export const MONTHLY_ALLOWANCE_CENTS = 1_500
+export const MAX_WISH_LENGTH = 80
 export const DEFAULT_BACKGROUND_THEME: BackgroundTheme = 'mint'
+
+export const DEFAULT_BUCKET_WISHES: BucketWishes = Object.freeze({
+  investment: '',
+  goal: '',
+  planned: '',
+  fun: '',
+  giving: '',
+})
 
 export const BACKGROUND_THEME_OPTIONS: readonly { value: BackgroundTheme; label: string }[] = [
   { value: 'mint', label: 'Mint Meadow' },
@@ -37,35 +46,40 @@ export const CATEGORY_OPTIONS: Record<TransactionType, readonly string[]> = {
   expense: ['Food & Drink', 'School', 'Transport', 'Planned Purchase', 'Fun', 'Giving', 'Goal Purchase', 'Other'],
 }
 
-export const BUCKET_DETAILS: Record<AllocationKey, { icon: string; name: string; description: string; className: string }> = {
+export const BUCKET_DETAILS: Record<AllocationKey, { icon: string; name: string; description: string; wishPlaceholder: string; className: string }> = {
   investment: {
     icon: '🌱',
     name: 'Long-term investment',
     description: 'Grow it for the future with an adult. It can go up or down.',
+    wishPlaceholder: 'What would you grow money for?',
     className: 'bucket-invest',
   },
   goal: {
     icon: '🎯',
     name: 'Big goal',
     description: 'Save for something that matters to you.',
+    wishPlaceholder: 'What big thing do you wish for?',
     className: 'bucket-goal',
   },
   planned: {
     icon: '📝',
     name: 'Planned spending',
     description: 'Think first, then choose what is worth it.',
+    wishPlaceholder: 'What would you like to plan for?',
     className: 'bucket-plan',
   },
   fun: {
     icon: '🎉',
     name: 'Fun now',
     description: 'A little money to enjoy without worry.',
+    wishPlaceholder: 'What fun thing would you enjoy?',
     className: 'bucket-fun',
   },
   giving: {
     icon: '💛',
     name: 'Giving',
     description: 'Help a person or cause you care about.',
+    wishPlaceholder: 'Who or what would you like to help?',
     className: 'bucket-give',
   },
 }
